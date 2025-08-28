@@ -1,5 +1,6 @@
-import InstagramFeed from '../components/InstagramFeed'
+// src/app/page.tsx
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  return <InstagramFeed />
+export default function Home() {
+  redirect("/instagram");
 }

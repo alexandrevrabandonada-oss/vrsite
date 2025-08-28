@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR">
       <body>
         <header className="border-b sticky top-0 bg-white/70 dark:bg-neutral-950/70 backdrop-blur z-50">
-          <nav className="container flex items-center gap-6 py-3">
+          <nav <a href="/instagram" className="hover:underline">Instagram</a>
             <Link href="/" className="font-bold no-underline">VR</Link>
             <ul className="flex gap-4 text-sm">
               <li><Link href="/jogos" className="no-underline">Jogos</Link></li>
