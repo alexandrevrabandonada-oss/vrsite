@@ -1,40 +1,73 @@
-import { NextResponse } from "next/server";
+C:\Users\Alexandre\D// src/app/api/instagram/route.ts
+// API: GET /api/instagram  (suporta override via ?t=TOKEN&id=IG_USER_ID)
 
-const FIELDS = [
-  "id",
-  "caption",
-  "media_type",
-  "media_url",
-  "thumbnail_url",
-  "permalink",
-  "timestamp",
-].join(",");
+export const runtime = 'nodejs'; // usar Node (envs + fetch externo)
 
-export const revalidate = 3600; // cache ISR de 1h
+type IgMediaItem = {
+  id: string;
+  caption?: string;
+  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM';
+  media_url: string;
+  permalink: string;
+  timestamp: string;
+};
+type IgOk = { data: IgMediaItem[]; paging?: unknown };
+type IgErr = { error: { message: string; type: string; code: number; fbtrace_id?: string } };
+
+const env = (k: string) => (process.env[k] || '').trim();
+const json = (data: unknown, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+    },
+  });
 
 export async function GET(req: Request) {
-  const token = process.env.IG_ACCESS_TOKEN;
-  const igUserId = process.env.IG_USER_ID;
+  try {
+    const { searchParams } = new URL(req.url);
+    const token = (searchParams.get('t') || env('IG_ACCESS_TOKEN')).trim();
+    const igUserId = (searchParams.get('id') || env('IG_USER_ID')).trim();
 
-  if (!token) return NextResponse.json({ error: "Faltando IG_ACCESS_TOKEN" }, { status: 500 });
-  if (!igUserId) return NextResponse.json({ error: "Faltando IG_USER_ID" }, { status: 500 });
+    if (!token || !igUserId) {
+      return json(
+        {
+          error: 'Missing environment variables',
+          detail: {
+            has_token: Boolean(token),
+            has_ig_user_id: Boolean(igUserId),
+            hint: 'Defina IG_ACCESS_TOKEN e IG_USER_ID nas Environment Variables da Vercel.',
+          },
+        },
+        500
+      );
+    }
 
-  const { searchParams } = new URL(req.url);
-  const after = searchParams.get("after") ?? "";
-  const limit = searchParams.get("limit") ?? "24";
+    const url = new URL(`https://graph.facebook.com/v23.0/${igUserId}/media`);
+    url.searchParams.set('fields', 'caption,media_type,media_url,permalink,timestamp');
+    url.searchParams.set('access_token', token);
 
-  const url = new URL(`https://graph.facebook.com/v20.0/${igUserId}/media`);
-  url.searchParams.set("fields", FIELDS);
-  url.searchParams.set("access_token", token);
-  url.searchParams.set("limit", limit);
-  if (after) url.searchParams.set("after", after);
+    const r = await fetch(url.toString(), { method: 'GET', cache: 'no-store' });
+    const data: IgOk | IgErr = await r.json();
 
-  const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
-  const text = await res.text();
-  if (!res.ok) {
-    return NextResponse.json({ error: "FB error", detail: text }, { status: res.status });
+    if (!r.ok || 'error' in data) {
+      const status = 'error' in data && data.error.code === 190 ? 401 : 500;
+      return json(
+        {
+          error: 'Falha ao buscar feed',
+          detail: data,
+          tips:
+            status === 401
+              ? 'Token inválido/expirado. Gere long-lived e atualize IG_ACCESS_TOKEN (sem espaços/linhas).'
+              : undefined,
+        },
+        status
+      );
+    }
+
+    return json(data, 200);
+  } catch (e: any) {
+    return json({ error: 'Erro inesperado', detail: String(e?.message || e) }, 500);
   }
-  return NextResponse.json(JSON.parse(text));
-}
-
 }
