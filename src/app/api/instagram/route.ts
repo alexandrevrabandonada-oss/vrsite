@@ -1,32 +1,40 @@
-import { NextResponse } from 'next/server'
+import { NextResponse } from "next/server";
 
-export const revalidate = 3600 // cache 1h
+const FIELDS = [
+  "id",
+  "caption",
+  "media_type",
+  "media_url",
+  "thumbnail_url",
+  "permalink",
+  "timestamp",
+].join(",");
 
-export async function GET() {
-  const token = process.env.IG_ACCESS_TOKEN
-  const userId = process.env.IG_USER_ID
+export const revalidate = 3600; // cache ISR de 1h
 
-  // If no token, return mock to help local dev
-  if (!token) {
-    return NextResponse.json({
-      items: [
-        { id: 'mock1', caption: 'Configure IG_ACCESS_TOKEN para feed real', media_url: '/placeholder/insta1.jpg', media_type: 'IMAGE', permalink: '#' },
-        { id: 'mock2', caption: 'Mais um exemplo', media_url: '/placeholder/insta2.jpg', media_type: 'IMAGE', permalink: '#' },
-      ]
-    }, { status: 200 })
+export async function GET(req: Request) {
+  const token = process.env.IG_ACCESS_TOKEN;
+  const igUserId = process.env.IG_USER_ID;
+
+  if (!token) return NextResponse.json({ error: "Faltando IG_ACCESS_TOKEN" }, { status: 500 });
+  if (!igUserId) return NextResponse.json({ error: "Faltando IG_USER_ID" }, { status: 500 });
+
+  const { searchParams } = new URL(req.url);
+  const after = searchParams.get("after") ?? "";
+  const limit = searchParams.get("limit") ?? "24";
+
+  const url = new URL(`https://graph.facebook.com/v20.0/${igUserId}/media`);
+  url.searchParams.set("fields", FIELDS);
+  url.searchParams.set("access_token", token);
+  url.searchParams.set("limit", limit);
+  if (after) url.searchParams.set("after", after);
+
+  const res = await fetch(url.toString(), { next: { revalidate: 3600 } });
+  const text = await res.text();
+  if (!res.ok) {
+    return NextResponse.json({ error: "FB error", detail: text }, { status: res.status });
   }
+  return NextResponse.json(JSON.parse(text));
+}
 
-  try {
-    const fields = 'id,caption,media_url,thumbnail_url,permalink,media_type'
-    const endpoint = userId
-      ? `https://graph.instagram.com/${userId}/media?fields=${fields}&access_token=${token}`
-      : `https://graph.instagram.com/me/media?fields=${fields}&access_token=${token}`
-
-    const res = await fetch(endpoint, { cache: 'no-store' })
-    if (!res.ok) throw new Error(await res.text())
-    const data = await res.json()
-    return NextResponse.json({ items: data.data ?? [] })
-  } catch (e) {
-    return NextResponse.json({ error: 'Falha ao buscar feed', detail: String(e) }, { status: 500 })
-  }
 }
