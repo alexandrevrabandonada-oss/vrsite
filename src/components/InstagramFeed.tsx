@@ -1,63 +1,117 @@
-import Image from 'next/image'
+'use client';
 
-type Media = {
-  id: string
-  caption?: string
-  media_url: string
-  media_type: 'IMAGE'|'VIDEO'|'CAROUSEL_ALBUM'
-  thumbnail_url?: string
-  permalink: string
-}
+import { useEffect, useState } from 'react';
 
-async function getFeed() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/api/instagram`, { next: { revalidate: 3600 } })
-    if (!res.ok) throw new Error('bad status')
-    const data = await res.json()
-    return data.items as Media[]
-  } catch {
-    // Fallback mocked items for dev without token
-    return [
-      {
-        id: 'mock1',
-        caption: 'Post de exemplo (configure IG_ACCESS_TOKEN para feed real)',
-        media_url: '/placeholder/insta1.jpg',
-        media_type: 'IMAGE',
-        permalink: '#',
-      },
-      {
-        id: 'mock2',
-        caption: 'Volta Redonda — exemplo de grid',
-        media_url: '/placeholder/insta2.jpg',
-        media_type: 'IMAGE',
-        permalink: '#',
-      },
-    ] as Media[]
+type Item = {
+  id: string;
+  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM' | string;
+  media_url: string;
+  thumbnail_url?: string;
+  permalink: string;
+  caption?: string;
+  username?: string;
+  timestamp?: string;
+};
+
+export default function InstagramFeed({
+  limit = 12,
+  className = '',
+}: {
+  limit?: number;
+  className?: string;
+}) {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const base =
+      typeof window === 'undefined'
+        ? ''
+        : (process.env.NEXT_PUBLIC_SITE_URL &&
+            /^https?:\/\//.test(process.env.NEXT_PUBLIC_SITE_URL)
+            ? process.env.NEXT_PUBLIC_SITE_URL
+            : '');
+
+    const initialUrl = `${base || ''}/api/instagram`;
+
+    async function getJsonWithRedirect(u: string, maxHops = 3): Promise<any> {
+      let url = u;
+      for (let i = 0; i < maxHops; i++) {
+        const res = await fetch(url, { cache: 'no-store', redirect: 'manual' as RequestRedirect });
+        // 200 OK
+        if (res.status >= 200 && res.status < 300) {
+          try {
+            return await res.json();
+          } catch (e) {
+            const t = await res.text();
+            throw new Error(`Resposta não-JSON: ${t.slice(0, 200)}`);
+          }
+        }
+        // Redirects 301/302/307/308
+        if ([301, 302, 307, 308].includes(res.status)) {
+          const loc = res.headers.get('Location');
+          if (!loc) throw new Error(`HTTP ${res.status} sem Location`);
+          // Resolve relativo ao origin atual
+          const nextUrl = new URL(loc, window.location.origin).toString();
+          url = nextUrl;
+          continue;
+        }
+        // Outros erros
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status} - ${text.slice(0, 300)}`);
+      }
+      throw new Error(`Muitos redirecionamentos (>${maxHops})`);
+    }
+
+    getJsonWithRedirect(initialUrl)
+      .then((json) => {
+        const data: Item[] = Array.isArray(json?.data) ? json.data : [];
+        setItems(limit ? data.slice(0, limit) : data);
+      })
+      .catch((e: any) => setError(e?.message ?? String(e)))
+      .finally(() => setLoading(false));
+  }, [limit]);
+
+  if (loading) return <div className="p-4">Carregando feed…</div>;
+  if (error) {
+    return (
+      <div className="p-4 text-sm">
+        <div className="text-red-600 font-medium mb-1">Erro ao carregar Instagram</div>
+        <pre className="whitespace-pre-wrap break-words bg-neutral-100 dark:bg-neutral-900 p-3 rounded">
+          {error}
+        </pre>
+        <div className="text-neutral-600 dark:text-neutral-400 mt-2">
+          Dica: abra <code>/api/instagram</code> no navegador. Se abrir JSON, a lista renderiza aqui.
+        </div>
+      </div>
+    );
   }
-}
+  if (!items.length) return <div className="p-4">Nenhuma mídia encontrada.</div>;
 
-export default async function InstagramFeed() {
-  const items = await getFeed()
   return (
-    <section className="space-y-4">
-      <h1>Início</h1>
-      <p className="opacity-80">Últimos posts do Instagram</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {items.map(item => (
-          <a key={item.id} href={item.permalink} target="_blank" className="card no-underline">
-            <div className="relative w-full aspect-square overflow-hidden rounded-xl">
-              <Image
-                src={item.media_type === 'VIDEO' ? (item.thumbnail_url ?? item.media_url) : item.media_url}
-                alt={item.caption ?? 'Instagram post'}
-                fill
-                sizes="(max-width:768px) 100vw, 33vw"
-                className="object-cover"
+    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ${className}`}>
+      {items.map((m) => {
+        const imgSrc = m.media_type === 'VIDEO' ? m.thumbnail_url ?? m.media_url : m.media_url;
+        return (
+          <a
+            key={m.id}
+            href={m.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-lg overflow-hidden border"
+          >
+            <div className="aspect-square bg-neutral-200 dark:bg-neutral-800">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt={m.caption?.slice(0, 120) ?? 'post'}
+                src={imgSrc}
+                className="w-full h-full object-cover group-hover:opacity-90 transition"
               />
             </div>
-            {item.caption && <p className="mt-2 text-sm line-clamp-2">{item.caption}</p>}
           </a>
-        ))}
-      </div>
-    </section>
-  )
+        );
+      })}
+    </div>
+  );
 }

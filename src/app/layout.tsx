@@ -1,10 +1,10 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import InstagramFeed from "@/components/InstagramFeed";
 
 export const metadata: Metadata = {
-  title: "Volta Redonda",
-  description: "Site com posts do Instagram, jogos, HQs e artigos.",
+  title: "VR Abandonada",
+  description: "Site oficial do projeto VR Abandonada com feed do Instagram.",
 };
 
 export default function RootLayout({
@@ -16,15 +16,15 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <header className="border-b sticky top-0 bg-white/70 dark:bg-neutral-950/70 backdrop-blur z-50">
-          <nav className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-6">
-            <a href="/" className="font-semibold">Volta Redonda</a>
+          <nav className="max-w-4xl mx-auto flex gap-6 p-4 text-sm">
+            <a href="/" className="hover:underline">Início</a>
             <a href="/instagram" className="hover:underline">Instagram</a>
-            <a href="/jogos" className="hover:underline">Jogos</a>
-            <a href="/hqs" className="hover:underline">HQs</a>
-            <a href="/artigos" className="hover:underline">Artigos</a>
           </nav>
         </header>
-        <main className="min-h-screen">{children}</main>
+        <main className="max-w-4xl mx-auto p-4">{children}</main>
+        <footer className="border-t mt-10 py-6 text-center text-sm text-neutral-500">
+          © {new Date().getFullYear()} VR Abandonada. Todos os direitos reservados.
+        </footer>
       </body>
     </html>
   );
