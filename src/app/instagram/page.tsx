@@ -1,20 +1,14 @@
-// src/app/instagram/page.tsx
-import InstagramFeed from "@/components/InstagramFeed";
+// srimport InstagramFeed from "@/components/InstagramFeed";
 
-export const metadata = {
-  title: "Instagram — preview",
-};
-
-export default function Page() {
+export default function InstagramPage() {
   return (
-    <main className="max-w-5xl mx-auto p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Instagram (preview)</h1>
-      <p className="text-sm opacity-80">
-        Esta página serve apenas para testar o componente. Em produção você
-        pode importar <code>InstagramFeed</code> em qualquer lugar.
+    <main className="container mx-auto px-4 py-10 space-y-6">
+      <h1 className="text-3xl font-semibold">Instagram (preview)</h1>
+      <p className="text-muted-foreground">
+        Esta página serve apenas para testar o componente. Em produção você pode importar <code>InstagramFeed</code> em qualquer lugar.
       </p>
+
       {/* Exibe 12 itens */}
-      {/* @ts-expect-error Async Server Component */}
       <InstagramFeed limit={12} />
     </main>
   );
