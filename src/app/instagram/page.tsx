@@ -1,4 +1,4 @@
-// srimport Iimport InstagramFeed from "@/components/InstagramFeed";
+import InstagramFeed from "@/components/InstagramFeed";
 
 export default function InstagramPage() {
   return (
