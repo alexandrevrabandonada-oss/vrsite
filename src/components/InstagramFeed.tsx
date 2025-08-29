@@ -25,90 +25,115 @@ export default function InstagramFeed({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const base =
-      typeof window === 'undefined'
-        ? ''
-        : (process.env.NEXT_PUBLIC_SITE_URL &&
-            /^https?:\/\//.test(process.env.NEXT_PUBLIC_SITE_URL)
-            ? process.env.NEXT_PUBLIC_SITE_URL
-            : '');
+    const controller = new AbortController();
 
-    const initialUrl = `${base || ''}/api/instagram`;
+    async function load() {
+      try {
+        setLoading(true);
+        setError(null);
 
-    async function getJsonWithRedirect(u: string, maxHops = 3): Promise<any> {
-      let url = u;
-      for (let i = 0; i < maxHops; i++) {
-        const res = await fetch(url, { cache: 'no-store', redirect: 'manual' as RequestRedirect });
-        // 200 OK
-        if (res.status >= 200 && res.status < 300) {
-          try {
-            return await res.json();
-          } catch (e) {
-            const t = await res.text();
-            throw new Error(`Resposta não-JSON: ${t.slice(0, 200)}`);
-          }
+        // Base absoluto quando no server; relativo no client
+        const base =
+          typeof window === 'undefined'
+            ? process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+            : '';
+
+        // Permite debug via query (?t= e ?id=) quando renderiza no client
+        const search =
+          typeof window !== 'undefined'
+            ? new URLSearchParams(window.location.search)
+            : null;
+
+        const t = search?.get('t') ?? undefined;
+        const id = search?.get('id') ?? undefined;
+
+        const qs = new URLSearchParams();
+        if (t) qs.set('t', t);
+        if (id) qs.set('id', id);
+
+        const url = `${base}/api/instagram${qs.toString() ? `?${qs.toString()}` : ''}`;
+
+        const res = await fetch(url, {
+          signal: controller.signal,
+          // Em prod você pode trocar para { next: { revalidate: 900 } }
+          cache: 'no-store',
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
-        // Redirects 301/302/307/308
-        if ([301, 302, 307, 308].includes(res.status)) {
-          const loc = res.headers.get('Location');
-          if (!loc) throw new Error(`HTTP ${res.status} sem Location`);
-          // Resolve relativo ao origin atual
-          const nextUrl = new URL(loc, window.location.origin).toString();
-          url = nextUrl;
-          continue;
+
+        const json = await res.json();
+        const data: Item[] = Array.isArray(json) ? json : json.data ?? [];
+        setItems(data.slice(0, limit));
+      } catch (err: any) {
+        if (err?.name !== 'AbortError') {
+          setError(err?.message ?? 'Erro desconhecido');
         }
-        // Outros erros
-        const text = await res.text();
-        throw new Error(`HTTP ${res.status} - ${text.slice(0, 300)}`);
+      } finally {
+        setLoading(false);
       }
-      throw new Error(`Muitos redirecionamentos (>${maxHops})`);
     }
 
-    getJsonWithRedirect(initialUrl)
-      .then((json) => {
-        const data: Item[] = Array.isArray(json?.data) ? json.data : [];
-        setItems(limit ? data.slice(0, limit) : data);
-      })
-      .catch((e: any) => setError(e?.message ?? String(e)))
-      .finally(() => setLoading(false));
+    load();
+    return () => controller.abort();
   }, [limit]);
 
-  if (loading) return <div className="p-4">Carregando feed…</div>;
+  if (loading) {
+    return <p className="text-sm text-neutral-500">Carregando Instagram…</p>;
+  }
+
   if (error) {
     return (
-      <div className="p-4 text-sm">
-        <div className="text-red-600 font-medium mb-1">Erro ao carregar Instagram</div>
-        <pre className="whitespace-pre-wrap break-words bg-neutral-100 dark:bg-neutral-900 p-3 rounded">
-          {error}
-        </pre>
-        <div className="text-neutral-600 dark:text-neutral-400 mt-2">
+      <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        Erro ao carregar Instagram: {error}
+        <div className="mt-2 text-xs text-red-600/80">
           Dica: abra <code>/api/instagram</code> no navegador. Se abrir JSON, a lista renderiza aqui.
         </div>
       </div>
     );
   }
-  if (!items.length) return <div className="p-4">Nenhuma mídia encontrada.</div>;
+
+  if (!items?.length) {
+    return <p className="text-sm text-neutral-500">Nenhuma mídia encontrada.</p>;
+  }
 
   return (
-    <div className={`grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 ${className}`}>
-      {items.map((m) => {
-        const imgSrc = m.media_type === 'VIDEO' ? m.thumbnail_url ?? m.media_url : m.media_url;
+    <div className={
+      'grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ' + className
+    }>
+      {items.map((item) => {
+        const isVideo = item.media_type === 'VIDEO';
+        const thumb = item.thumbnail_url ?? item.media_url;
         return (
           <a
-            key={m.id}
-            href={m.permalink}
+            key={item.id}
+            href={item.permalink}
             target="_blank"
-            rel="noopener noreferrer"
-            className="group block rounded-lg overflow-hidden border"
+            rel="noreferrer noopener"
+            className="group relative block overflow-hidden rounded-xl border border-neutral-200/60 bg-white shadow-sm transition hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900"
           >
-            <div className="aspect-square bg-neutral-200 dark:bg-neutral-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt={m.caption?.slice(0, 120) ?? 'post'}
-                src={imgSrc}
-                className="w-full h-full object-cover group-hover:opacity-90 transition"
-              />
-            </div>
+            {/* thumb / poster */}
+            <img
+              src={thumb}
+              alt={item.caption ?? 'Instagram'}
+              className="h-36 w-full object-cover sm:h-40 md:h-44 lg:h-48"
+              loading="lazy"
+            />
+
+            {/* badge de vídeo */}
+            {isVideo && (
+              <span className="absolute right-2 top-2 rounded-md bg-black/70 px-2 py-1 text-[10px] font-medium text-white">
+                Vídeo
+              </span>
+            )}
+
+            {/* legenda curta on hover */}
+            {item.caption && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 max-h-20 translate-y-6 bg-gradient-to-t from-black/70 to-transparent p-3 text-xs text-white opacity-0 transition group-hover:translate-y-0 group-hover:opacity-100">
+                <p className="line-clamp-3">{item.caption}</p>
+              </div>
+            )}
           </a>
         );
       })}
