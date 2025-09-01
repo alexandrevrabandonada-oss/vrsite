@@ -1,0 +1,44 @@
+[
+  {
+    "id": "seed-1",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 1 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  },
+  {
+    "id": "seed-2",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 2 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  },
+  {
+    "id": "seed-3",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 3 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  },
+  {
+    "id": "seed-4",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 4 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  },
+  {
+    "id": "seed-5",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 5 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  },
+  {
+    "id": "seed-6",
+    "media_url": "/og-default.png",
+    "permalink": "https://instagram.com/",
+    "caption": "Post de exemplo 6 — substitua por dados reais quando integrar o Instagram Graph API.",
+    "timestamp": "2024-07-20"
+  }
+]
