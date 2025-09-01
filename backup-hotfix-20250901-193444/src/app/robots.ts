@@ -1,5 +1,5 @@
-﻿import type { MetadataRoute } from 'next'
-import { getSiteUrl } from '@/lib/seo'
+import type { MetadataRoute } from 'next'
+import { getSiteUrl } from '@/src/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
   const site = getSiteUrl()
@@ -13,4 +13,3 @@ export default function robots(): MetadataRoute.Robots {
     host: site
   }
 }
-

@@ -1,5 +1,5 @@
-﻿import type { MetadataRoute } from 'next'
-import { getSiteUrl } from '@/lib/seo'
+import type { MetadataRoute } from 'next'
+import { getSiteUrl } from '@/src/lib/seo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const site = getSiteUrl()
@@ -22,4 +22,3 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: r === '' ? 1 : 0.6
   }))
 }
-
