@@ -1,0 +1,13 @@
+import Image from 'next/image';
+
+export default function AuthorBadge() {
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900 border border-zinc-800">
+      <Image src="/avatar.png" width={48} height={48} alt="Alexandre - VR Abandonada" className="rounded-full" />
+      <div>
+        <p className="font-medium">VR Abandonada</p>
+        <p className="text-xs text-zinc-400">por Alexandre</p>
+      </div>
+    </div>
+  );
+}

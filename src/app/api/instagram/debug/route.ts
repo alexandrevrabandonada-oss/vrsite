@@ -1,73 +1,38 @@
-// src/app/api/instagram/route.ts
-// API: GET /api/instagram  (suporta override via ?t=TOKEN&id=IG_USER_ID)
+// src/app/api/instagram/debug/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { IG_BASE } from '@/lib/ig';
 
-export const runtime = 'nodejs'; // usar Node (envs + fetch externo)
+export const runtime = 'nodejs';
 
-type IgMediaItem = {
-  id: string;
-  caption?: string;
-  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM';
-  media_url: string;
-  permalink: string;
-  timestamp: string;
-};
-type IgOk = { data: IgMediaItem[]; paging?: unknown };
-type IgErr = { error: { message: string; type: string; code: number; fbtrace_id?: string } };
+export async function GET(req: NextRequest) {
+  const base = process.env.INSTAGRAM_GRAPH_BASE || IG_BASE;
+  const token = process.env.IG_ACCESS_TOKEN || '';
+  const igUserId = process.env.IG_USER_ID || '';
 
-const env = (k: string) => (process.env[k] || '').trim();
-const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store',
-    },
-  });
+  const info: any = {
+    hasToken: !!token,
+    tokenLen: token ? token.length : 0,
+    tokenPreview: token ? token.slice(0, 6) + '...' + token.slice(-5) : null,
+    igUserId: igUserId || null,
+    base,
+    vercelEnv: process.env.VERCEL_ENV || 'development',
+    me: null,
+    meErr: null
+  };
 
-export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const token = (searchParams.get('t') || env('IG_ACCESS_TOKEN')).trim();
-    const igUserId = (searchParams.get('id') || env('IG_USER_ID')).trim();
-
-    if (!token || !igUserId) {
-      return json(
-        {
-          error: 'Missing environment variables',
-          detail: {
-            has_token: Boolean(token),
-            has_ig_user_id: Boolean(igUserId),
-            hint: 'Defina IG_ACCESS_TOKEN e IG_USER_ID nas Environment Variables da Vercel.',
-          },
-        },
-        500
-      );
+  if (token) {
+    try {
+      const url = new URL(base.replace(/\/$/, '') + '/me');
+      url.searchParams.set('fields', 'id,username');
+      url.searchParams.set('access_token', token);
+      const res = await fetch(url.toString());
+      const body = await res.text();
+      if (res.ok) info.me = JSON.parse(body);
+      else info.meErr = { status: res.status, body };
+    } catch (e: any) {
+      info.meErr = { message: String(e) };
     }
-
-    const url = new URL(`https://graph.facebook.com/v23.0/${igUserId}/media`);
-    url.searchParams.set('fields', 'caption,media_type,media_url,permalink,timestamp');
-    url.searchParams.set('access_token', token);
-
-    const r = await fetch(url.toString(), { method: 'GET', cache: 'no-store' });
-    const data: IgOk | IgErr = await r.json();
-
-    if (!r.ok || 'error' in data) {
-      const status = 'error' in data && data.error.code === 190 ? 401 : 500;
-      return json(
-        {
-          error: 'Falha ao buscar feed',
-          detail: data,
-          tips:
-            status === 401
-              ? 'Token inválido/expirado. Gere long-lived e atualize IG_ACCESS_TOKEN (sem espaços/linhas).'
-              : undefined,
-        },
-        status
-      );
-    }
-
-    return json(data, 200);
-  } catch (e: any) {
-    return json({ error: 'Erro inesperado', detail: String(e?.message || e) }, 500);
   }
+
+  return NextResponse.json(info, { status: 200 });
 }

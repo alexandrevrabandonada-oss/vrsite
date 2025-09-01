@@ -1,135 +1,40 @@
-import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-type IGItem = {
-  id: string;
-  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM' | string;
-  media_url: string;
-  thumbnail_url?: string;
-  permalink: string;
-  caption?: string;
-  username?: string;
-  timestamp?: string;
-};
-
-async function getAllPosts() {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-  const res = await fetch(`${base}/api/instagram`, { next: { revalidate: 300 } });
+async function fetchPost(id: string, base: string, token: string) {
+  const u = new URL(`${base}/${id}`);
+  u.searchParams.set('fields', 'id,caption,media_type,media_url,permalink,thumbnail_url,timestamp,username,children{media_type,media_url,thumbnail_url,permalink}');
+  u.searchParams.set('access_token', token);
+  const res = await fetch(u.toString(), { cache: 'no-store' });
   if (!res.ok) return null;
-  const json = await res.json();
-  const data: IGItem[] = Array.isArray(json?.data) ? json.data : [];
-  return data;
+  return res.json();
 }
 
-async function getPostById(id: string) {
-  const posts = await getAllPosts();
-  if (!posts) return null;
-  return posts.find((p) => p.id === id) || null;
-}
+export default async function Page({ params, searchParams }: { params: { id: string }, searchParams: Record<string, string> }) {
+  const base = process.env.INSTAGRAM_GRAPH_BASE || 'https://graph.instagram.com';
+  const token = (process.env.IG_ACCESS_TOKEN || process.env.IG_LONG_LIVED_TOKEN || '').trim();
+  const tokenOverride = (searchParams?.t || '').trim();
+  const tokenUse = tokenOverride || token;
+  if (!tokenUse) notFound();
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { id: string };
-}): Promise<Metadata> {
-  const post = await getPostById(params.id);
-  if (!post) {
-    return {
-      title: 'Post não encontrado • Instagram',
-    };
-  }
-
-  const title =
-    (post.caption && post.caption.slice(0, 60)) || 'Post do Instagram';
-  const description =
-    (post.caption && post.caption.slice(0, 155)) || 'Post do Instagram';
-  const image =
-    post.media_type === 'VIDEO' ? post.thumbnail_url || post.media_url : post.media_url;
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      images: image ? [{ url: image }] : undefined,
-      type: 'article',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: image ? [image] : undefined,
-    },
-  };
-}
-
-export default async function InstagramPostPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const post = await getPostById(params.id);
-  if (!post) return notFound();
+  const post = await fetchPost(params.id, base, tokenUse);
+  if (!post) notFound();
 
   const isVideo = post.media_type === 'VIDEO';
-  const cover = isVideo ? post.thumbnail_url || post.media_url : post.media_url;
 
   return (
-    <main className="container mx-auto max-w-3xl p-6">
-      <a
-        href="/instagram"
-        className="mb-4 inline-block text-sm text-blue-600 hover:underline"
-      >
-        ← Voltar ao feed
-      </a>
-
-      <article className="overflow-hidden rounded-xl bg-white shadow dark:bg-neutral-900">
-        <div className="bg-black">
-          {isVideo ? (
-            <img
-              src={cover}
-              alt={post.caption || 'Vídeo do Instagram'}
-              className="w-full object-contain"
-            />
-          ) : (
-            <img
-              src={post.media_url}
-              alt={post.caption || 'Imagem do Instagram'}
-              className="w-full object-contain"
-            />
-          )}
-        </div>
-
-        <div className="p-5">
-          {post.username && (
-            <div className="mb-2 text-sm text-neutral-500">@{post.username}</div>
-          )}
-
-          {post.caption && (
-            <p className="whitespace-pre-line text-neutral-800 dark:text-neutral-200">
-              {post.caption}
-            </p>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <a
-              className="rounded-lg bg-neutral-100 px-3 py-2 text-sm hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
-              href="/instagram"
-            >
-              Voltar ao feed
-            </a>
-            <a
-              className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
-              href={post.permalink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Abrir no Instagram
-            </a>
-          </div>
-        </div>
-      </article>
+    <main className="container mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">@{post.username}</h1>
+      <div className="rounded-lg overflow-hidden border border-white/10">
+        {isVideo ? (
+          <video src={post.media_url} controls className="w-full h-auto" />
+        ) : (
+          <img src={post.media_url} alt={post.caption || 'Post'} className="w-full h-auto" />
+        )}
+      </div>
+      {post.caption && <p className="mt-4 whitespace-pre-wrap">{post.caption}</p>}
+      <div className="mt-3 text-sm opacity-70">
+        {post.timestamp ? new Date(post.timestamp).toLocaleString() : ''}
+      </div>
     </main>
   );
 }

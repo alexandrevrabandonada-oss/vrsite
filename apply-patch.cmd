@@ -1,0 +1,3 @@
+@echo off
+echo [ok] Aplicando patch Instagram...
+powershell -ExecutionPolicy Bypass -File apply-instagram-patch.ps1
