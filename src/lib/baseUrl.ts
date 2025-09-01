@@ -1,5 +1,5 @@
 ﻿export function getBaseUrl() {
-  if (typeof window !== 'undefined') return window.location.origin;
+  if (typeof window !== "undefined") return window.location.origin;
 
   const vercelUrl =
     process.env.NEXT_PUBLIC_SITE_URL ||
@@ -8,7 +8,7 @@
 
   if (vercelUrl) {
     if (/^https?:\/\//i.test(vercelUrl)) return vercelUrl;
-    return https://;
+    return `https://${vercelUrl}`;
   }
-  return 'http://localhost:3000';
+  return "http://localhost:3000";
 }

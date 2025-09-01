@@ -33,7 +33,7 @@ Crie estes **Secrets** (exactamente com estes nomes):
   - Agenda diária (04:00 UTC) + disparo manual.
   - Roda o script Node que faz refresh/validação/atualização no Vercel.
 - `scripts/refresh-ig-token-ci.mjs`
-  - Faz o refresh via `oauth/access_token` (fb_exchange_token) usando seu _long-lived token atual_.
+  - Faz o refresh via `oauth/access_token` (fb*exchange_token) usando seu \_long-lived token atual*.
   - Valida o novo token no `graph.instagram.com/me`.
   - Atualiza **IG_ACCESS_TOKEN** em todas as _targets_ (Production/Preview/Development) via API do Vercel.
   - Se `VERCEL_DEPLOY_HOOK_URL` estiver definido, dispara um deploy imediato.
