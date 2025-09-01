@@ -1,0 +1,41 @@
+[
+  {
+    "id": "seed-1",
+    "title": "Reforma trabalhista: impactos nos trabalhadores",
+    "excerpt": "Entenda como as mudanças afetam direitos e benefícios.",
+    "slug": "reforma-trabalhista-impactos",
+    "tags": [
+      "trabalho",
+      "direitos",
+      "reforma"
+    ],
+    "date": "2024-05-12",
+    "image": "/og-default.png"
+  },
+  {
+    "id": "seed-2",
+    "title": "Educação pública e cortes de verba",
+    "excerpt": "Panorama dos investimentos e desafios nas escolas.",
+    "slug": "educacao-publica-cortes",
+    "tags": [
+      "educacao",
+      "orcamento",
+      "politicas-publicas"
+    ],
+    "date": "2024-06-03",
+    "image": "/og-default.png"
+  },
+  {
+    "id": "seed-3",
+    "title": "Fila do SUS: o que mudou?",
+    "excerpt": "Análise dos tempos de espera e novos programas.",
+    "slug": "fila-do-sus-o-que-mudou",
+    "tags": [
+      "saude",
+      "sus",
+      "gestao"
+    ],
+    "date": "2024-07-20",
+    "image": "/og-default.png"
+  }
+]
