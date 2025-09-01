@@ -1,0 +1,111 @@
+$ErrorActionPreference = 'Stop'
+Set-Location -Path (Split-Path -Parent $MyInvocation.MyCommand.Path)
+
+function Say($m){ Write-Host $m -ForegroundColor Cyan }
+function Warn($m){ Write-Host $m -ForegroundColor Yellow }
+function Fail($m){ Write-Host '[ERRO] ' + $m -ForegroundColor Red; exit 1 }
+
+if (-not (Test-Path '.git')) { Fail 'Este diretorio nao parece ser um repo Git (.git ausente).' }
+git rev-parse --is-inside-work-tree *> $null
+if ($LASTEXITCODE -ne 0) { Fail 'Nao eh um repo Git valido.' }
+
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$backupDir = 'backup-ui-' + $stamp
+New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+
+# 1) Escrever componentes
+$entries = @(
+  @{src='payload\src\components\AppHeader.tsx'; dst='src\components\AppHeader.tsx'},
+  @{src='payload\src\components\HomeSearchBar.tsx'; dst='src\components\HomeSearchBar.tsx'}
+)
+
+foreach ($e in $entries) {
+  $src = Join-Path (Get-Location) $e.src
+  $dst = Join-Path (Get-Location) $e.dst
+  if (Test-Path $dst) {
+    $rel = Resolve-Path -Relative $dst
+    $destBackup = Join-Path $backupDir $rel
+    New-Item -ItemType Directory -Force -Path (Split-Path $destBackup) | Out-Null
+    Copy-Item -Path $dst -Destination $destBackup -Force
+  }
+  New-Item -ItemType Directory -Force -Path (Split-Path $dst) | Out-Null
+  Copy-Item -Path $src -Destination $dst -Force
+  Say ("==> Gravado " + $e.dst)
+}
+
+# 2) Injetar header no layout.tsx
+$layout = 'src\app\layout.tsx'
+if (Test-Path $layout) {
+  $txt = [System.IO.File]::ReadAllText($layout)
+  if ($txt -notmatch "from '@/components/AppHeader'") {
+    $txt = $txt -replace "(\nexport default function\s+RootLayout\s*\()", "import AppHeader from '@/components/AppHeader'\n$1"
+  }
+  # Inserir <AppHeader /> antes de {children} (dentro do <body>)
+  if ($txt -match "<body[^>]*>") {
+    # Se já houver AppHeader, não insere de novo
+    if ($txt -notmatch "<AppHeader\s*/>") {
+      $txt = $txt -replace "(\<body[^>]*\>)", "`$1`n      <AppHeader />"
+    }
+  }
+  [System.IO.File]::WriteAllText($layout, $txt)
+  Say "==> Header injetado em layout.tsx"
+} else {
+  Warn "Nao encontrei src/app/layout.tsx. Pulei a injecao do header."
+}
+
+# 3) Injetar HomeSearchBar na home (page.tsx)
+$home = 'src\app\page.tsx'
+if (Test-Path $home) {
+  $txt = [System.IO.File]::ReadAllText($home)
+  if ($txt -notmatch "from '@/components/HomeSearchBar'") {
+    $txt = "import HomeSearchBar from '@/components/HomeSearchBar'\n" + $txt
+  }
+  # Inserir HomeSearchBar antes da primeira tag <main
+  if ($txt -match "<main") {
+    $txt = $txt -replace "(\<main)", "<HomeSearchBar />`n<$1".Replace("<","") # evita duplo '<'
+    $txt = $txt -replace "<HomeSearchBar />`n<main", "<HomeSearchBar />`n<main"
+  } elseif ($txt -match "return\s*\(") {
+    $txt = $txt -replace "(return\s*\()", "$1<>`n  <HomeSearchBar />"
+    $txt = $txt -replace "(\)\s*;\s*\}\s*$)", "  </>`n)$1"
+  } else {
+    # fallback: apenas prefixa o componente
+    $txt = "import HomeSearchBar from '@/components/HomeSearchBar'\n" + $txt + "\n{/* HomeSearchBar fallback */}\n<HomeSearchBar />\n"
+  }
+  [System.IO.File]::WriteAllText($home, $txt)
+  Say "==> HomeSearchBar injetado em page.tsx"
+} else {
+  Warn "Nao encontrei src/app/page.tsx. Pulei injecao na home."
+}
+
+Say '==> Commitando e enviando'
+git add -A
+git commit -m 'feat(ui): navbar com link /search + barra de busca na home (hero)' | Out-Null
+$branch = (git rev-parse --abbrev-ref HEAD).Trim()
+if (-not $branch) { $branch = 'main' }
+git push origin $branch
+
+# 4) Deploy Hook opcional
+$hook = $null
+$envFile = '.env.vercel'
+if (Test-Path $envFile) {
+  foreach ($line in Get-Content $envFile) {
+    if ($line -match '^\s*VERCEL_DEPLOY_HOOK_URL\s*=\s*(.+)$') { $hook = $Matches[1].Trim() }
+  }
+}
+if ($hook) {
+  Say '==> Disparando Deploy Hook no Vercel'
+  try {
+    $resp = Invoke-WebRequest -Method POST -Uri $hook -UseBasicParsing
+    if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300) {
+      Write-Host '[OK] Redeploy solicitado com sucesso.' -ForegroundColor Green
+    } else {
+      Warn ('Resposta do Vercel: ' + $resp.StatusCode)
+    }
+  } catch {
+    Warn 'Falha ao chamar Deploy Hook. Verifique a URL em .env.vercel'
+  }
+} else {
+  Warn 'Sem Deploy Hook configurado — apenas o push foi feito (o Vercel deve buildar via Git).'
+}
+
+Say '==> UI Search Visibility Pack aplicado.'

@@ -4,8 +4,7 @@ import InstagramFeed from "@/components/InstagramFeed";
 export const metadata: Metadata = {
   title: "VR Abandonada",
   description: "Site oficial do projeto VR Abandonada com feed do Instagram.",
-};
-export default function RootLayout({
+};import AppHeader from '@/components/AppHeader'\n{
   children,
 }: {
   children: React.ReactNode;
@@ -14,6 +13,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       {" "}
       <body>
+      <AppHeader />
         {" "}
         <header className="border-b sticky top-0 bg-white/70 dark:bg-neutral-950/70 backdrop-blur z-50">
           {" "}
