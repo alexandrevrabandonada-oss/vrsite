@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { GlobalWorkerOptions, getDocument, version as pdfjsVersion } from "pdfjs-dist";
+import {
+  GlobalWorkerOptions,
+  getDocument,
+  version as pdfjsVersion,
+} from "pdfjs-dist";
 
 type Props = { url: string };
 

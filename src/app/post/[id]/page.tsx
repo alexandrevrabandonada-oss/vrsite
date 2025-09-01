@@ -30,7 +30,8 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
   const image = item.thumbnail_url || item.media_url;
   return {
     title: `${title} â€¢ VR Abandonada`,
-    description: item.caption?.slice(0, 160) || "MatÃ©ria integrada do Instagram.",
+    description:
+      item.caption?.slice(0, 160) || "MatÃ©ria integrada do Instagram.",
     openGraph: {
       title,
       images: image ? [image] : [],
@@ -72,7 +73,11 @@ export default async function PostPage({ params }: { params: { id: string } }) {
               {item.children?.data?.map((ch) => (
                 <div key={ch.id} className="w-full">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={ch.media_url} alt={item.caption || "Imagem do carrossel"} className="w-full" />
+                  <img
+                    src={ch.media_url}
+                    alt={item.caption || "Imagem do carrossel"}
+                    className="w-full"
+                  />
                 </div>
               ))}
             </div>
@@ -108,4 +113,3 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     </main>
   );
 }
-

@@ -1,7 +1,11 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 const jogos = [
-  { slug: 'exemplo', title: 'Jogo Exemplo (HTML5/Pygame via pygbag)', desc: 'Demonstração' },
+  {
+    slug: "exemplo",
+    title: "Jogo Exemplo (HTML5/Pygame via pygbag)",
+    desc: "Demonstração",
+  },
 ];
 
 export default function JogosPage() {
@@ -13,7 +17,10 @@ export default function JogosPage() {
           <div key={j.slug} className="card">
             <h2 className="text-xl">{j.title}</h2>
             <p className="opacity-80">{j.desc}</p>
-            <Link href={`/jogos/${j.slug}`} className="inline-block mt-2 underline">
+            <Link
+              href={`/jogos/${j.slug}`}
+              className="inline-block mt-2 underline"
+            >
               Abrir
             </Link>
           </div>

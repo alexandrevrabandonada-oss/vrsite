@@ -12,15 +12,18 @@ export async function GET(req: NextRequest) {
   const igUserId = getUserId(req);
 
   if (!token || !igUserId) {
-    return NextResponse.json({
-      error: "Configuração ausente",
-      detail: {
-        hasToken: !!token,
-        hasUserId: !!igUserId,
-        message:
-          "Defina IG_ACCESS_TOKEN e IG_USER_ID ou use ?t= e ?id= para teste."
-      }
-    }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "Configuração ausente",
+        detail: {
+          hasToken: !!token,
+          hasUserId: !!igUserId,
+          message:
+            "Defina IG_ACCESS_TOKEN e IG_USER_ID ou use ?t= e ?id= para teste.",
+        },
+      },
+      { status: 400 },
+    );
   }
 
   const url = new URL(req.url);
@@ -36,15 +39,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       count: data.length,
-      items: data.map(m => ({
+      items: data.map((m) => ({
         id: m.id,
         type: m.media_type,
         image: m.media_url || m.thumbnail_url,
         caption: m.caption,
         permalink: m.permalink,
         ts: m.timestamp,
-        user: m.username
-      }))
+        user: m.username,
+      })),
     });
   } catch (e: any) {
     // Normaliza o erro legível

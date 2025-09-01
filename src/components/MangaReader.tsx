@@ -1,5 +1,5 @@
-'use client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+"use client";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Props = {
   basePath: string; // e.g. /hqs/minha-serie/cap-1
@@ -7,22 +7,26 @@ type Props = {
   rightToLeft?: boolean;
 };
 
-export default function MangaReader({ basePath, totalPages, rightToLeft = false }: Props) {
+export default function MangaReader({
+  basePath,
+  totalPages,
+  rightToLeft = false,
+}: Props) {
   const [page, setPage] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const src = useMemo(
-    () => `${basePath}/${String(page).padStart(3, '0')}.webp`,
-    [basePath, page]
+    () => `${basePath}/${String(page).padStart(3, "0")}.webp`,
+    [basePath, page],
   );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') (rightToLeft ? prev : next)();
-      if (e.key === 'ArrowLeft') (rightToLeft ? next : prev)();
+      if (e.key === "ArrowRight") (rightToLeft ? prev : next)();
+      if (e.key === "ArrowLeft") (rightToLeft ? next : prev)();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [page, totalPages, rightToLeft]);
 
   function next() {
@@ -37,18 +41,26 @@ export default function MangaReader({ basePath, totalPages, rightToLeft = false 
     const n = page + 1;
     if (n <= totalPages) {
       const img = new Image();
-      img.src = `${basePath}/${String(n).padStart(3, '0')}.webp`;
+      img.src = `${basePath}/${String(n).padStart(3, "0")}.webp`;
     }
   }, [page, basePath, totalPages]);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <button className="px-3 py-1 rounded-lg border" onClick={rightToLeft ? next : prev}>
+        <button
+          className="px-3 py-1 rounded-lg border"
+          onClick={rightToLeft ? next : prev}
+        >
           Anterior
         </button>
-        <div className="text-sm opacity-80">Página {page} / {totalPages}</div>
-        <button className="px-3 py-1 rounded-lg border" onClick={rightToLeft ? prev : next}>
+        <div className="text-sm opacity-80">
+          Página {page} / {totalPages}
+        </div>
+        <button
+          className="px-3 py-1 rounded-lg border"
+          onClick={rightToLeft ? prev : next}
+        >
           Próxima
         </button>
         <button
@@ -59,7 +71,11 @@ export default function MangaReader({ basePath, totalPages, rightToLeft = false 
         </button>
       </div>
       <div ref={containerRef} className="card flex justify-center">
-        <img src={src} alt={`Página ${page}`} className="w-full h-auto object-contain" />
+        <img
+          src={src}
+          alt={`Página ${page}`}
+          className="w-full h-auto object-contain"
+        />
       </div>
     </div>
   );

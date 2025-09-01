@@ -2,7 +2,7 @@ name: Refresh Instagram Long-Lived Token
 
 on:
   schedule:
-    - cron: "0 4 * * *"  # todos os dias às 04:00 UTC
+    - cron: "0 4 * * *" # todos os dias às 04:00 UTC
   workflow_dispatch: {}
 
 jobs:

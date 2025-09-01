@@ -10,7 +10,7 @@ const {
   VERCEL_TOKEN,
   VERCEL_ORG_ID,
   VERCEL_PROJECT_ID,
-  VERCEL_DEPLOY_HOOK_URL
+  VERCEL_DEPLOY_HOOK_URL,
 } = process.env;
 
 function required(name, value) {
@@ -31,12 +31,17 @@ const FB_OAUTH_URL = "https://graph.facebook.com/v20.0/oauth/access_token";
 const IG_ME_URL = "https://graph.instagram.com/me";
 const VERCEL_ENV_LIST = `https://api.vercel.com/v10/projects/${encodeURIComponent(VERCEL_PROJECT_ID_V)}/env`;
 const VERCEL_ENV_ADD = VERCEL_ENV_LIST;
-const VERCEL_ENV_DEL = (envId) => `https://api.vercel.com/v10/projects/${encodeURIComponent(VERCEL_PROJECT_ID_V)}/env/${envId}`;
+const VERCEL_ENV_DEL = (envId) =>
+  `https://api.vercel.com/v10/projects/${encodeURIComponent(VERCEL_PROJECT_ID_V)}/env/${envId}`;
 
 async function jsonOrThrow(res) {
   const txt = await res.text();
   let data;
-  try { data = JSON.parse(txt); } catch { data = { raw: txt }; }
+  try {
+    data = JSON.parse(txt);
+  } catch {
+    data = { raw: txt };
+  }
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${txt}`);
   }
@@ -55,7 +60,9 @@ async function refreshToken() {
   const data = await jsonOrThrow(res);
   const newToken = data.access_token;
   if (!newToken || typeof newToken !== "string") {
-    throw new Error(`Exchange did not return access_token. Got: ${JSON.stringify(data)}`);
+    throw new Error(
+      `Exchange did not return access_token. Got: ${JSON.stringify(data)}`,
+    );
   }
   return newToken.trim();
 }
@@ -75,20 +82,25 @@ async function validateToken(token) {
 async function listVercelEnv() {
   const res = await fetch(VERCEL_ENV_LIST, {
     headers: {
-      Authorization: `Bearer ${VERCEL_TOKEN_V}`
-    }
+      Authorization: `Bearer ${VERCEL_TOKEN_V}`,
+    },
   });
   return jsonOrThrow(res);
 }
 
 async function removeExistingIgEnv() {
   const envs = await listVercelEnv();
-  const hits = (envs?.envs || []).filter(e => e.key === "IG_ACCESS_TOKEN");
+  const hits = (envs?.envs || []).filter((e) => e.key === "IG_ACCESS_TOKEN");
   for (const e of hits) {
     const url = VERCEL_ENV_DEL(e.id);
-    const res = await fetch(url, { method: "DELETE", headers: { Authorization: `Bearer ${VERCEL_TOKEN_V}` } });
+    const res = await fetch(url, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${VERCEL_TOKEN_V}` },
+    });
     await jsonOrThrow(res);
-    console.log(`Removed old IG_ACCESS_TOKEN (${e.target?.join(",") || "?"}) id=${e.id}`);
+    console.log(
+      `Removed old IG_ACCESS_TOKEN (${e.target?.join(",") || "?"}) id=${e.id}`,
+    );
   }
 }
 
@@ -104,9 +116,9 @@ async function addNewIgEnv(token) {
     method: "POST",
     headers: {
       Authorization: `Bearer ${VERCEL_TOKEN_V}`,
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
   const data = await jsonOrThrow(res);
   console.log("Added IG_ACCESS_TOKEN to all targets:", data);
@@ -115,7 +127,9 @@ async function addNewIgEnv(token) {
 async function triggerDeployHook() {
   const hook = (process.env.VERCEL_DEPLOY_HOOK_URL || "").trim();
   if (!hook) {
-    console.log("No VERCEL_DEPLOY_HOOK_URL provided — skipping immediate deploy trigger.");
+    console.log(
+      "No VERCEL_DEPLOY_HOOK_URL provided — skipping immediate deploy trigger.",
+    );
     return;
   }
   const res = await fetch(hook, { method: "POST" });

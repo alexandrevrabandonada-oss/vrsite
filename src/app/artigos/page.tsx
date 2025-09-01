@@ -1,7 +1,12 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 const artigos = [
-  { slug: 'artigo-exemplo', title: 'Artigo Exemplo', autores: 'Você', ano: 2025 },
+  {
+    slug: "artigo-exemplo",
+    title: "Artigo Exemplo",
+    autores: "Você",
+    ano: 2025,
+  },
 ];
 
 export default function ArtigosPage() {

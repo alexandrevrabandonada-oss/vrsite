@@ -20,9 +20,11 @@ INSTAGRAM_GRAPH_VERSION=v21.0
 - `/api/instagram/debug` — mostra status das variáveis e valida `/me` no Graph.
 
 ## Scripts (Windows)
+
 - `scripts\configure-env.cmd` — cria/atualiza `.env.local` interativo.
 - `scripts\refresh-ig-token.ps1` — troca token curto -> longo e grava `.env.local`.
 
 ## Problemas comuns
+
 - **400 / 190 Cannot parse access token**: token do **Basic Display** ou com caracteres extras (aspas/que bra). Gere com **Facebook Login** e escopos corretos.
 - **Sem mídia**: conta precisa ser **Creator/Business** e estar conectada a uma **Página**. Obtenha `IG_USER_ID` via `/{page-id}?fields=instagram_business_account`.

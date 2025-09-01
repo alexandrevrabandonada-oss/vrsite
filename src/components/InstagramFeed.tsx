@@ -19,7 +19,7 @@ export default function InstagramFeed({ limit = 12 }: { limit?: number }) {
   useEffect(() => {
     const url = `/api/instagram?limit=${limit}`;
     fetch(url, { cache: "no-store" })
-      .then(r => r.json().then(j => ({ ok: r.ok, j })))
+      .then((r) => r.json().then((j) => ({ ok: r.ok, j })))
       .then(({ ok, j }) => {
         if (!ok) throw j;
         setItems(j.items || []);
@@ -39,9 +39,15 @@ export default function InstagramFeed({ limit = 12 }: { limit?: number }) {
         <a key={m.id} href={`/instagram/${m.id}`} className="card no-underline">
           {m.image && (
             // usamos <img> para evitar bloqueio de domínios no next/image
-            <img src={m.image} alt={m.caption || "Post"} className="w-full h-auto rounded-xl" />
+            <img
+              src={m.image}
+              alt={m.caption || "Post"}
+              className="w-full h-auto rounded-xl"
+            />
           )}
-          <div className="mt-2 text-sm opacity-80 line-clamp-3">{m.caption}</div>
+          <div className="mt-2 text-sm opacity-80 line-clamp-3">
+            {m.caption}
+          </div>
         </a>
       ))}
     </div>

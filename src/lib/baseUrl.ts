@@ -1,13 +1,14 @@
 ﻿export function getBaseUrl() {
-  // Node/Server (Vercel)
-  if (typeof window === "undefined") {
-    const env = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL;
-    if (env) {
-      const url = env.startsWith("http") ? env : `https://${env}`;
-      return url.replace(/\/+$/, "");
-    }
-    return "http://localhost:3000";
+  if (typeof window !== 'undefined') return window.location.origin;
+
+  const vercelUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.VERCEL_URL ||
+    process.env.NEXT_PUBLIC_VERCEL_URL;
+
+  if (vercelUrl) {
+    if (/^https?:\/\//i.test(vercelUrl)) return vercelUrl;
+    return https://;
   }
-  // Browser
-  return window.location.origin;
+  return 'http://localhost:3000';
 }

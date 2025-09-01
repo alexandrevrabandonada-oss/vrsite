@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function NotFoundPost() {
   return (
@@ -7,7 +7,10 @@ export default function NotFoundPost() {
       <p className="mt-2 text-neutral-600 dark:text-neutral-300">
         O conteúdo pode ter sido removido ou o link está incorreto.
       </p>
-      <Link href="/instagram" className="mt-4 inline-block text-blue-600 hover:underline">
+      <Link
+        href="/instagram"
+        className="mt-4 inline-block text-blue-600 hover:underline"
+      >
         ← Voltar ao feed
       </Link>
     </main>

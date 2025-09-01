@@ -6,8 +6,7 @@
  */
 
 export const IG_GRAPH_BASE =
-  process.env.INSTAGRAM_GRAPH_BASE ||
-  "https://graph.facebook.com/v20.0"; // fonte única
+  process.env.INSTAGRAM_GRAPH_BASE || "https://graph.facebook.com/v20.0"; // fonte única
 
 export function getToken(req?: Request) {
   // Prioridade: querystring ?t= , depois env
@@ -40,12 +39,7 @@ export async function fbMe(token: string) {
 }
 
 export async function igAccount(igUserId: string, token: string) {
-  const fields = [
-    "id",
-    "username",
-    "media_count",
-    "account_type"
-  ].join(",");
+  const fields = ["id", "username", "media_count", "account_type"].join(",");
   const u = `${IG_GRAPH_BASE}/${igUserId}?fields=${fields}&access_token=${encodeURIComponent(token)}`;
   const r = await fetch(u, { cache: "no-store" });
   const js = await r.json().catch(() => ({}));
@@ -72,7 +66,7 @@ export async function fetchMedia(igUserId: string, token: string, limit = 12) {
     "thumbnail_url",
     "permalink",
     "timestamp",
-    "username"
+    "username",
   ].join(",");
 
   const u = `${IG_GRAPH_BASE}/${igUserId}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`;

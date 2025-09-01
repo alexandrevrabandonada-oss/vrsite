@@ -42,7 +42,11 @@ async function fetchFeed(): Promise<Item[]> {
     throw new Error(`API ${res.status}`);
   }
   const json = await res.json();
-  const data = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : [];
+  const data = Array.isArray(json)
+    ? json
+    : Array.isArray(json?.data)
+      ? json.data
+      : [];
   return (data ?? []) as Item[];
 }
 
@@ -125,8 +129,9 @@ export default async function MateriaPage({
     notFound();
   }
 
-  const published =
-    item.timestamp ? new Date(item.timestamp).toLocaleString("pt-BR") : null;
+  const published = item.timestamp
+    ? new Date(item.timestamp).toLocaleString("pt-BR")
+    : null;
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-8 prose prose-neutral dark:prose-invert">

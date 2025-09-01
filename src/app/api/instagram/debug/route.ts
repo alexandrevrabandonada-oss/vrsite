@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const igUserId = getUserId(req);
 
   const me = token ? await fbMe(token) : null;
-  const ig = (token && igUserId) ? await igAccount(igUserId, token) : null;
+  const ig = token && igUserId ? await igAccount(igUserId, token) : null;
 
   return NextResponse.json({
     hasToken: !!token,
@@ -21,6 +21,6 @@ export async function GET(req: NextRequest) {
     meStatus: me?.status ?? null,
     me: me?.body ?? null,
     igStatus: ig?.status ?? null,
-    ig: ig?.body ?? null
+    ig: ig?.body ?? null,
   });
 }
