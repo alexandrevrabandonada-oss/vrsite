@@ -1,14 +1,14 @@
-Search-MVP Hotfix (v3)
-Compatibilidade com PowerShell antigo (sem usar -Raw).
+Text Regex Hotfix (v1)
+Corrige regex Unicode Property (\p{Diacritic}) para compatibilidade com targets < ES2018.
+Substitui por faixa de combinantes: /[\u0300-\u036f]/g
 
 O que faz:
-- Corrige todos os imports "@/src/" -> "@/"" em src/**/*.ts e src/**/*.tsx usando .NET (sem -Raw).
-- Garante resolveJsonModule=true no tsconfig.json (via .NET + conversão simples).
-- Commit + push e (opcional) chama Deploy Hook do Vercel.
+- Procura em src/**/*.ts e src/**/*.tsx por "\p{Diacritic}" e troca para "[\u0300-\u036f]".
+- Faz backup, commit + push e (opcional) aciona Deploy Hook.
 
-Uso:
-1) Descompacte na RAIZ do projeto (.git).
-2) Rode:
-   - Windows:  _APPLY-SEARCH-HOTFIX3-WINDOWS.bat
-   - macOS:    _APPLY-SEARCH-HOTFIX3-MAC.command
-   - Linux:    ./apply-search-hotfix3.sh
+Como usar:
+1) Descompacte na RAIZ do projeto.
+2) Execute:
+   - Windows:  _APPLY-TEXT-REGEX-HOTFIX-WINDOWS.bat
+   - macOS:    _APPLY-TEXT-REGEX-HOTFIX-MAC.command
+   - Linux:    ./apply-text-regex-hotfix.sh

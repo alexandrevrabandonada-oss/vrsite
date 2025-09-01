@@ -2,7 +2,7 @@ export function slugify(input: string) {
   return (input || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[\\u0300-\\u036f]/gu, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
@@ -12,7 +12,7 @@ export function extractTags(text: string) {
   const base = text
     .toLowerCase()
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, ' ')
+    .replace(/[\\u0300-\\u036f]/gu, ' ')
   const candidates = base.split(/[^a-z0-9]+/g).filter(Boolean)
   const stop = new Set(['a','o','e','de','da','do','das','dos','em','para','por','na','no','nas','nos','um','uma','uns','umas','com','sem','que','se'])
   const tags = new Set<string>()
