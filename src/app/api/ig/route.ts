@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import data from '@/src/data/ig-seed.json' assert { type: 'json' }
+import data from '@/data/ig-seed.json' assert { type: 'json' }
 
 export const runtime = 'nodejs'
 

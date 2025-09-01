@@ -1,20 +1,15 @@
-Home Feed MVP (v1)
-Traz de volta um feed na Home. Por enquanto usa um endpoint local `/api/ig`
-que lê um `seed.json`. Depois, trocamos pelo Instagram Graph API real (Pacote Instagram).
+Alias Fix (HomeFeed) v1
+Corrige imports que ficaram como '@/src/...'. No seu projeto o alias '@' já aponta para 'src/',
+então o correto é '@/...'.
 
-O que adiciona:
-- `src/components/HomeFeed.tsx` (client) — cards com imagens, legendas e tags
-- `src/app/api/ig/route.ts` — API simples que retorna `src/data/ig-seed.json`
-- `src/data/ig-seed.json` — 6 posts de exemplo
-- Atualiza `src/app/page.tsx` para incluir o feed + link para /search
-- Faz backup, commit + push e (se houver) dispara Deploy Hook do Vercel
+O que o script faz:
+- Procura em **src/app/page.tsx**, **src/app/api/ig/route.ts** e **src/components/HomeFeed.tsx**
+  e troca '@/src/' -> '@/'. (Se algum dos arquivos não existir, ele ignora.)
+- Faz commit + push e, se houver `VERCEL_DEPLOY_HOOK_URL` em `.env.vercel`, dispara redeploy.
 
 Como usar:
-1) Coloque este ZIP na RAIZ do projeto (onde tem `.git`) e descompacte.
-2) Execute um dos scripts:
-   - Windows:  _APPLY-HOME-FEED-WINDOWS.bat
-   - macOS:    _APPLY-HOME-FEED-MAC.command
-   - Linux:    ./apply-home-feed.sh
-
-Depois do deploy, abra a Home — os cards aparecem. Quando formos integrar o IG real,
-o componente já está pronto; só troca a API.
+1) Coloque o ZIP na RAIZ do projeto e descompacte.
+2) Rode:
+   - Windows:  _APPLY-ALIAS-FIX-HOMEFEED-WINDOWS.bat
+   - macOS:    _APPLY-ALIAS-FIX-HOMEFEED-MAC.command
+   - Linux:    ./apply-alias-fix-homefeed.sh
