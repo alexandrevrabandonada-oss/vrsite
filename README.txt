@@ -1,16 +1,12 @@
-Post Page MVP (v1)
-Faz os cards do feed abrirem em uma página interna (`/posts/[id]`) ao invés de ir para o Instagram.
-
-O que adiciona/atualiza:
-- `src/app/posts/[id]/page.tsx` — página do post com imagem grande, legenda, data e link "Ver no Instagram".
-- `src/app/api/ig/route.ts` — agora aceita `?id=...` para retornar 1 post.
-- `src/components/HomeFeed.tsx` — passa a linkar para `/posts/{id}`.
-- Scripts 1‑clique (Windows/Mac/Linux) com backup + commit + push e Deploy Hook opcional.
+Post Page Origin Hotfix (v1)
+Corrige o erro no servidor ao abrir `/posts/[id]`.
+Causa: o fetch da página do post usava URL relativa/variável de ambiente ausente.
+Solução: monta a origem a partir dos headers (`x-forwarded-proto` + `x-forwarded-host`)
+e faz `fetch(`${origin}/api/ig?id=...`)`. Também força `dynamic` para evitar cache.
 
 Como usar:
-1) Descompacte este ZIP na RAIZ do projeto (onde tem `.git`).
+1) Descompacte na RAIZ do projeto.
 2) Execute:
-   - Windows:  _APPLY-POST-PAGE-WINDOWS.bat
-   - macOS:    _APPLY-POST-PAGE-MAC.command
-   - Linux:    ./apply-post-page.sh
-Depois do deploy, a Home abrirá o detalhe no seu domínio.
+   - Windows:  _APPLY-POST-PAGE-ORIGIN-WINDOWS.bat
+   - macOS:    _APPLY-POST-PAGE-ORIGIN-MAC.command
+   - Linux:    ./apply-post-page-origin.sh
