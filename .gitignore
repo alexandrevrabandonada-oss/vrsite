@@ -1,11 +1,11 @@
-# dependências
+﻿# dependÃªncias
 node_modules
 
 # build do Next.js
 .next
 out
 
-# variáveis de ambiente
+# variÃ¡veis de ambiente
 .env
 .env.local
 .env.development.local
@@ -21,3 +21,6 @@ Thumbs.db
 
 .vercel
 .env*.local
+
+backup-*/
+.backups/
