@@ -1,5 +1,5 @@
-import seed from '@/src/data/seed.json' assert { type: 'json' }
-import { slugify } from '@/src/lib/text'
+import seed from '@/data/seed.json' assert { type: 'json' }
+import { slugify } from '@/lib/text'
 
 export type Doc = {
   id: string
