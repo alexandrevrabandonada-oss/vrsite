@@ -1,6 +1,6 @@
-// src/app/post/[id]/page.tsx
+﻿// src/app/post/[id]/page.tsx
 import { notFound } from "next/navigation";
-import { getBaseUrl } from "@/src/lib/baseUrl";
+import { getBaseUrl } from "@/lib/baseUrl";
 
 type Item = {
   id: string;
@@ -25,12 +25,12 @@ async function getFeed(): Promise<{ data?: Item[]; error?: any }> {
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const feed = await getFeed();
   const item = feed.data?.find((i) => i.id === params.id);
-  if (!item) return { title: "Post não encontrado • VR Abandonada" };
+  if (!item) return { title: "Post nÃ£o encontrado â€¢ VR Abandonada" };
   const title = item.caption ? item.caption.slice(0, 60) : "Post do Instagram";
   const image = item.thumbnail_url || item.media_url;
   return {
-    title: `${title} • VR Abandonada`,
-    description: item.caption?.slice(0, 160) || "Matéria integrada do Instagram.",
+    title: `${title} â€¢ VR Abandonada`,
+    description: item.caption?.slice(0, 160) || "MatÃ©ria integrada do Instagram.",
     openGraph: {
       title,
       images: image ? [image] : [],
@@ -108,3 +108,4 @@ export default async function PostPage({ params }: { params: { id: string } }) {
     </main>
   );
 }
+

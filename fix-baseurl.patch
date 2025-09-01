@@ -1,0 +1,32 @@
+*** Begin Patch
+*** Add File: src/lib/baseUrl.ts
++// src/lib/baseUrl.ts
++export function getBaseUrl() {
++  // Client-side
++  if (typeof window !== 'undefined') return window.location.origin;
++
++  // Server/Vercel
++  const vercelUrl =
++    process.env.NEXT_PUBLIC_SITE_URL ||
++    process.env.VERCEL_URL ||
++    process.env.NEXT_PUBLIC_VERCEL_URL;
++
++  if (vercelUrl) {
++    // VERCEL_URL normalmente vem sem protocolo
++    if (/^https?:\/\//i.test(vercelUrl)) return vercelUrl;
++    return `https://${vercelUrl}`;
++  }
++
++  // Dev fallback
++  return 'http://localhost:3000';
++}
++
+*** End Patch
+*** Begin Patch
+*** Update File: src/app/post/[id]/page.tsx
+@@
+-// ❌ import quebrado
+-// import { getBaseUrl } from '@/src/lib/baseUrl';
++// ✅ import corrigido
++import { getBaseUrl } from '@/lib/baseUrl';
+*** End Patch

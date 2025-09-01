@@ -1,0 +1,371 @@
+# apply-robust-ig-patch.ps1
+# Atualiza/Cria arquivos para uso correto do Instagram Graph + robustez e health-check.
+
+$ErrorActionPreference = "Stop"
+
+function Write-File($Path, $Content) {
+  $dir = Split-Path -Parent $Path
+  if (!(Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
+  Set-Content -Path $Path -Value $Content -Encoding UTF8
+  Write-Host "[ok]  $Path"
+}
+
+# 1) src/lib/ig.ts
+$ig_ts = @'
+/**
+ * src/lib/ig.ts
+ * Camada de acesso ao Instagram Graph (via Facebook Graph v20.0).
+ * - NÃO pede username no /me (apenas id,name).
+ * - Para IG Business/Creator usa /{IG_USER_ID} com fields adequados.
+ */
+
+export const IG_GRAPH_BASE =
+  process.env.INSTAGRAM_GRAPH_BASE ||
+  "https://graph.facebook.com/v20.0"; // fonte única
+
+export function getToken(req?: Request) {
+  // Prioridade: querystring ?t= , depois env
+  try {
+    if (req) {
+      const url = new URL(req.url);
+      const t = url.searchParams.get("t");
+      if (t && t.trim()) return t.trim();
+    }
+  } catch {}
+  return process.env.IG_ACCESS_TOKEN || process.env.IG_LONG_LIVED_TOKEN || "";
+}
+
+export function getUserId(req?: Request) {
+  try {
+    if (req) {
+      const url = new URL(req.url);
+      const id = url.searchParams.get("id");
+      if (id && id.trim()) return id.trim();
+    }
+  } catch {}
+  return process.env.IG_USER_ID || "";
+}
+
+export async function fbMe(token: string) {
+  const u = `${IG_GRAPH_BASE}/me?fields=id,name&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  return { status: r.status, body: js };
+}
+
+export async function igAccount(igUserId: string, token: string) {
+  const fields = [
+    "id",
+    "username",
+    "media_count",
+    "account_type"
+  ].join(",");
+  const u = `${IG_GRAPH_BASE}/${igUserId}?fields=${fields}&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  return { status: r.status, body: js };
+}
+
+export type IgMediaItem = {
+  id: string;
+  caption?: string;
+  media_type: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM" | string;
+  media_url?: string;
+  thumbnail_url?: string;
+  permalink?: string;
+  timestamp?: string;
+  username?: string;
+};
+
+export async function fetchMedia(igUserId: string, token: string, limit = 12) {
+  const fields = [
+    "id",
+    "caption",
+    "media_type",
+    "media_url",
+    "thumbnail_url",
+    "permalink",
+    "timestamp",
+    "username"
+  ].join(",");
+
+  const u = `${IG_GRAPH_BASE}/${igUserId}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err = js?.error || { message: "Unknown error", code: r.status };
+    throw new Error(JSON.stringify({ status: r.status, error: err }));
+  }
+  const data: IgMediaItem[] = js?.data || [];
+  return data;
+}
+'@
+Write-File "src/lib/ig.ts" $ig_ts
+
+# 2) API: /api/instagram (lista mídia + normalização de erro)
+$api_route = @'
+/**
+ * src/app/api/instagram/route.ts
+ * Lista mídia do IG com queda-controlada e mensagens claras.
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { fetchMedia, getToken, getUserId } from "@/lib/ig";
+
+export const runtime = "nodejs";
+
+export async function GET(req: NextRequest) {
+  const token = getToken(req);
+  const igUserId = getUserId(req);
+
+  if (!token || !igUserId) {
+    return NextResponse.json({
+      error: "Configuração ausente",
+      detail: {
+        hasToken: !!token,
+        hasUserId: !!igUserId,
+        message:
+          "Defina IG_ACCESS_TOKEN e IG_USER_ID ou use ?t= e ?id= para teste."
+      }
+    }, { status: 400 });
+  }
+
+  const url = new URL(req.url);
+  const limit = parseInt(url.searchParams.get("limit") || "12", 10);
+  const raw = url.searchParams.get("raw");
+
+  try {
+    const data = await fetchMedia(igUserId, token, limit);
+
+    if (raw) return NextResponse.json(data, { status: 200 });
+
+    // resposta “reduzida” para o componente
+    return NextResponse.json({
+      ok: true,
+      count: data.length,
+      items: data.map(m => ({
+        id: m.id,
+        type: m.media_type,
+        image: m.media_url || m.thumbnail_url,
+        caption: m.caption,
+        permalink: m.permalink,
+        ts: m.timestamp,
+        user: m.username
+      }))
+    });
+  } catch (e: any) {
+    // Normaliza o erro legível
+    let payload: any = { error: "Falha ao buscar feed" };
+    try {
+      const parsed = JSON.parse(e.message);
+      payload.detail = parsed;
+    } catch {
+      payload.detail = String(e.message || e);
+    }
+    return NextResponse.json(payload, { status: 400 });
+  }
+}
+'@
+Write-File "src/app/api/instagram/route.ts" $api_route
+
+# 3) API: /api/instagram/debug (mostra estado e validações sem pedir username em /me)
+$api_debug = @'
+/**
+ * src/app/api/instagram/debug/route.ts
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { IG_GRAPH_BASE, getToken, getUserId, fbMe, igAccount } from "@/lib/ig";
+
+export const runtime = "nodejs";
+
+export async function GET(req: NextRequest) {
+  const token = getToken(req);
+  const igUserId = getUserId(req);
+
+  const me = token ? await fbMe(token) : null;
+  const ig = (token && igUserId) ? await igAccount(igUserId, token) : null;
+
+  return NextResponse.json({
+    hasToken: !!token,
+    hasUserId: !!igUserId,
+    env: process.env.VERCEL_ENV || "development",
+    base: IG_GRAPH_BASE,
+    meStatus: me?.status ?? null,
+    me: me?.body ?? null,
+    igStatus: ig?.status ?? null,
+    ig: ig?.body ?? null
+  });
+}
+'@
+Write-File "src/app/api/instagram/debug/route.ts" $api_debug
+
+# 4) API: /api/instagram/health (para CI/monitoramento)
+$api_health = @'
+/**
+ * src/app/api/instagram/health/route.ts
+ * Retorna 200 somente se /me(id,name) e /{IG_USER_ID} estiverem OK.
+ */
+import { NextResponse } from "next/server";
+import { getToken, getUserId, fbMe, igAccount } from "@/lib/ig";
+
+export const runtime = "nodejs";
+
+export async function GET(request: Request) {
+  const token = getToken(request);
+  const igUserId = getUserId(request);
+
+  if (!token || !igUserId) {
+    return NextResponse.json({ ok: false, reason: "MISSING_ENV" }, { status: 503 });
+  }
+  const me = await fbMe(token);
+  if (me.status !== 200) {
+    return NextResponse.json({ ok: false, where: "me", status: me.status, body: me.body }, { status: 502 });
+  }
+  const ig = await igAccount(igUserId, token);
+  if (ig.status !== 200) {
+    return NextResponse.json({ ok: false, where: "igUser", status: ig.status, body: ig.body }, { status: 502 });
+  }
+  return NextResponse.json({ ok: true }, { status: 200 });
+}
+'@
+Write-File "src/app/api/instagram/health/route.ts" $api_health
+
+# 5) Componente e página (mantém preview)
+$component = @'
+"use client";
+import { useEffect, useState } from "react";
+
+type Item = {
+  id: string;
+  type: string;
+  image?: string;
+  caption?: string;
+  permalink?: string;
+  ts?: string;
+  user?: string;
+};
+
+export default function InstagramFeed({ limit = 12 }: { limit?: number }) {
+  const [items, setItems] = useState<Item[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const url = `/api/instagram?limit=${limit}`;
+    fetch(url, { cache: "no-store" })
+      .then(r => r.json().then(j => ({ ok: r.ok, j })))
+      .then(({ ok, j }) => {
+        if (!ok) throw j;
+        setItems(j.items || []);
+      })
+      .catch((e) => {
+        setErr(typeof e === "string" ? e : JSON.stringify(e));
+      })
+      .finally(() => setLoading(false));
+  }, [limit]);
+
+  if (loading) return <p>Carregando Instagram…</p>;
+  if (err) return <p>Erro ao carregar Instagram: {err}</p>;
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {items.map((m) => (
+        <a key={m.id} href={`/instagram/${m.id}`} className="card no-underline">
+          {m.image && (
+            // usamos <img> para evitar bloqueio de domínios no next/image
+            <img src={m.image} alt={m.caption || "Post"} className="w-full h-auto rounded-xl" />
+          )}
+          <div className="mt-2 text-sm opacity-80 line-clamp-3">{m.caption}</div>
+        </a>
+      ))}
+    </div>
+  );
+}
+'@
+Write-File "src/components/InstagramFeed.tsx" $component
+
+$page = @'
+import InstagramFeed from "@/components/InstagramFeed";
+
+export const metadata = {
+  title: "Instagram (preview) • VR Abandonada",
+  description: "Pré-visualização do feed do Instagram no site."
+};
+
+export default function Page() {
+  return (
+    <main className="container space-y-6">
+      <h1>Instagram (preview)</h1>
+      <p>Esta página serve apenas para testar o componente. Em produção você pode importar <code>InstagramFeed</code> em qualquer lugar.</p>
+      <InstagramFeed limit={9} />
+    </main>
+  );
+}
+'@
+Write-File "src/app/instagram/page.tsx" $page
+
+# 6) next.config.js (permite domínios CDN do Instagram)
+$nextcfg = @'
+/** @type {import("next").NextConfig} */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.cdninstagram.com" },
+      { protocol: "https", hostname: "**.fbcdn.net" }
+    ]
+  }
+};
+module.exports = nextConfig;
+'@
+Write-File "next.config.js" $nextcfg
+
+# 7) tsconfig paths (garante "@/lib" e "@/components")
+$tscfg = @'
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/lib/*": ["src/lib/*"],
+      "@/components/*": ["src/components/*"]
+    },
+    "plugins": [{ "name": "next" }]
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+'@
+Write-File "tsconfig.json" $tscfg
+
+# 8) Dica de .env.local (não sobrescreve, só avisa)
+if (!(Test-Path ".env.local")) {
+  Set-Content ".env.local" @'
+# .env.local – preencha com seus valores (ou deixe Vercel cuidar)
+IG_ACCESS_TOKEN=
+IG_USER_ID=
+INSTAGRAM_GRAPH_BASE=https://graph.facebook.com/v20.0
+'@ -Encoding UTF8
+  Write-Host "[ok]  .env.local escrito (edite IG_ACCESS_TOKEN/IG_USER_ID se quiser rodar sem querystring)"
+} else {
+  Write-Host "[ok]  .env.local já existe (sem alterações)"
+}
+
+Write-Host ""
+Write-Host "Tudo pronto."
+Write-Host "1) npm run dev"
+Write-Host "2) Health:  http://localhost:3000/api/instagram/health"
+Write-Host "3) Debug:   http://localhost:3000/api/instagram/debug"
+Write-Host "4) Feed:    http://localhost:3000/api/instagram?limit=6&raw=1"
+Write-Host "5) Página:  http://localhost:3000/instagram"

@@ -1,38 +1,26 @@
-// src/app/api/instagram/debug/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { IG_BASE } from '@/lib/ig';
+﻿/**
+ * src/app/api/instagram/debug/route.ts
+ */
+import { NextRequest, NextResponse } from "next/server";
+import { IG_GRAPH_BASE, getToken, getUserId, fbMe, igAccount } from "@/lib/ig";
 
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
-  const base = process.env.INSTAGRAM_GRAPH_BASE || IG_BASE;
-  const token = process.env.IG_ACCESS_TOKEN || '';
-  const igUserId = process.env.IG_USER_ID || '';
+  const token = getToken(req);
+  const igUserId = getUserId(req);
 
-  const info: any = {
+  const me = token ? await fbMe(token) : null;
+  const ig = (token && igUserId) ? await igAccount(igUserId, token) : null;
+
+  return NextResponse.json({
     hasToken: !!token,
-    tokenLen: token ? token.length : 0,
-    tokenPreview: token ? token.slice(0, 6) + '...' + token.slice(-5) : null,
-    igUserId: igUserId || null,
-    base,
-    vercelEnv: process.env.VERCEL_ENV || 'development',
-    me: null,
-    meErr: null
-  };
-
-  if (token) {
-    try {
-      const url = new URL(base.replace(/\/$/, '') + '/me');
-      url.searchParams.set('fields', 'id,username');
-      url.searchParams.set('access_token', token);
-      const res = await fetch(url.toString());
-      const body = await res.text();
-      if (res.ok) info.me = JSON.parse(body);
-      else info.meErr = { status: res.status, body };
-    } catch (e: any) {
-      info.meErr = { message: String(e) };
-    }
-  }
-
-  return NextResponse.json(info, { status: 200 });
+    hasUserId: !!igUserId,
+    env: process.env.VERCEL_ENV || "development",
+    base: IG_GRAPH_BASE,
+    meStatus: me?.status ?? null,
+    me: me?.body ?? null,
+    igStatus: ig?.status ?? null,
+    ig: ig?.body ?? null
+  });
 }

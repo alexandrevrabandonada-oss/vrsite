@@ -1,77 +1,87 @@
-export const IG_BASE = process.env.INSTAGRAM_GRAPH_BASE || 'https://graph.instagram.com';
+﻿/**
+ * src/lib/ig.ts
+ * Camada de acesso ao Instagram Graph (via Facebook Graph v20.0).
+ * - NÃO pede username no /me (apenas id,name).
+ * - Para IG Business/Creator usa /{IG_USER_ID} com fields adequados.
+ */
 
-export type RawMediaEdge = {
-  id: string;
-  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM' | string;
-  media_url: string;
-  thumbnail_url?: string;
-  permalink: string;
-  caption?: string;
-  username?: string;
-  timestamp?: string;
-};
+export const IG_GRAPH_BASE =
+  process.env.INSTAGRAM_GRAPH_BASE ||
+  "https://graph.facebook.com/v20.0"; // fonte única
 
-export type SimplifiedItem = {
-  id: string;
-  media_type: string;
-  media_url: string;
-  thumbnail_url?: string;
-  permalink: string;
-  caption?: string;
-  username?: string;
-  timestamp?: string;
-};
-
-export async function fetchMedia(args: {
-  token: string;
-  igUserId: string;
-  limit?: number;
-  base?: string;
-}) {
-  const { token, igUserId, limit = 9, base = IG_BASE } = args;
-  const url = new URL(`${base.replace(/\/$/, '')}/${igUserId}/media`);
-  url.searchParams.set('fields', [
-    'id',
-    'caption',
-    'media_type',
-    'media_url',
-    'permalink',
-    'thumbnail_url',
-    'timestamp',
-    'username'
-  ].join(','));
-  url.searchParams.set('access_token', token);
-  url.searchParams.set('limit', String(limit));
-
-  const res = await fetch(url.toString());
-  const text = await res.text();
-  if (!res.ok) {
-    let detail: any = text;
-    try { detail = JSON.parse(text); } catch {}
-    const err: any = new Error('HTTP ' + res.status);
-    err.status = res.status;
-    err.detail = detail;
-    throw err;
-  }
-  let json: any;
-  try { json = JSON.parse(text); } catch {
-    const err: any = new Error('Bad JSON from Graph');
-    err.status = 502;
-    err.detail = text;
-    throw err;
-  }
-  return json;
+export function getToken(req?: Request) {
+  // Prioridade: querystring ?t= , depois env
+  try {
+    if (req) {
+      const url = new URL(req.url);
+      const t = url.searchParams.get("t");
+      if (t && t.trim()) return t.trim();
+    }
+  } catch {}
+  return process.env.IG_ACCESS_TOKEN || process.env.IG_LONG_LIVED_TOKEN || "";
 }
 
-export function simplify(items: RawMediaEdge[]): SimplifiedItem[] {
-  return items.map((m) => ({
-    id: m.id,
-    media_type: m.media_type,
-    media_url: m.media_url,
-    thumbnail_url: m.thumbnail_url,
-    permalink: m.permalink,
-    caption: m.caption,
-    username: m.username,
-    timestamp: m.timestamp
-  }));
+export function getUserId(req?: Request) {
+  try {
+    if (req) {
+      const url = new URL(req.url);
+      const id = url.searchParams.get("id");
+      if (id && id.trim()) return id.trim();
+    }
+  } catch {}
+  return process.env.IG_USER_ID || "";
+}
+
+export async function fbMe(token: string) {
+  const u = `${IG_GRAPH_BASE}/me?fields=id,name&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  return { status: r.status, body: js };
+}
+
+export async function igAccount(igUserId: string, token: string) {
+  const fields = [
+    "id",
+    "username",
+    "media_count",
+    "account_type"
+  ].join(",");
+  const u = `${IG_GRAPH_BASE}/${igUserId}?fields=${fields}&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  return { status: r.status, body: js };
+}
+
+export type IgMediaItem = {
+  id: string;
+  caption?: string;
+  media_type: "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM" | string;
+  media_url?: string;
+  thumbnail_url?: string;
+  permalink?: string;
+  timestamp?: string;
+  username?: string;
+};
+
+export async function fetchMedia(igUserId: string, token: string, limit = 12) {
+  const fields = [
+    "id",
+    "caption",
+    "media_type",
+    "media_url",
+    "thumbnail_url",
+    "permalink",
+    "timestamp",
+    "username"
+  ].join(",");
+
+  const u = `${IG_GRAPH_BASE}/${igUserId}/media?fields=${fields}&limit=${limit}&access_token=${encodeURIComponent(token)}`;
+  const r = await fetch(u, { cache: "no-store" });
+  const js = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err = js?.error || { message: "Unknown error", code: r.status };
+    throw new Error(JSON.stringify({ status: r.status, error: err }));
+  }
+  const data: IgMediaItem[] = js?.data || [];
+  return data;
 }
