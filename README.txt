@@ -1,14 +1,13 @@
-Text Regex Flag Hotfix (v2)
-Corrige o erro: "This regular expression flag is only available when targeting 'es6' or later."
-Tira o flag **u** de expressões `/[\u0300-\u036f]/gu` -> `/[\u0300-\u036f]/g`.
+Text Library Replace (v1)
+Substitui diretamente `src/lib/text.ts` por uma versão compatível (sem flag `u`).
 
 O que faz:
-- Varre `src/**/*.ts*` e troca `([\u0300-\u036f])/gu` por `\1/g`.
-- Faz backup, commit + push e (opcional) aciona Deploy Hook.
+- Copia `payload/src/lib/text.ts` -> `src/lib/text.ts` (com backup).
+- Commit + push e (se houver) dispara Deploy Hook do Vercel.
 
 Como usar:
-1) Descompacte na RAIZ do projeto.
-2) Rode:
-   - Windows:  _APPLY-TEXT-REGEX-FLAG-HOTFIX-WINDOWS.bat
-   - macOS:    _APPLY-TEXT-REGEX-FLAG-HOTFIX-MAC.command
-   - Linux:    ./apply-text-regex-flag-hotfix.sh
+1) Descompacte este ZIP na **raiz do projeto** (onde tem `.git`).
+2) Execute:
+   - Windows:  _APPLY-TEXT-LIB-REPLACE-WINDOWS.bat
+   - macOS:    _APPLY-TEXT-LIB-REPLACE-MAC.command
+   - Linux:    ./apply-text-lib-replace.sh
