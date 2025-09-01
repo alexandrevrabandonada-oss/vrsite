@@ -1,14 +1,14 @@
-Text Regex Hotfix (v1)
-Corrige regex Unicode Property (\p{Diacritic}) para compatibilidade com targets < ES2018.
-Substitui por faixa de combinantes: /[\u0300-\u036f]/g
+Text Regex Flag Hotfix (v2)
+Corrige o erro: "This regular expression flag is only available when targeting 'es6' or later."
+Tira o flag **u** de expressões `/[\u0300-\u036f]/gu` -> `/[\u0300-\u036f]/g`.
 
 O que faz:
-- Procura em src/**/*.ts e src/**/*.tsx por "\p{Diacritic}" e troca para "[\u0300-\u036f]".
+- Varre `src/**/*.ts*` e troca `([\u0300-\u036f])/gu` por `\1/g`.
 - Faz backup, commit + push e (opcional) aciona Deploy Hook.
 
 Como usar:
 1) Descompacte na RAIZ do projeto.
-2) Execute:
-   - Windows:  _APPLY-TEXT-REGEX-HOTFIX-WINDOWS.bat
-   - macOS:    _APPLY-TEXT-REGEX-HOTFIX-MAC.command
-   - Linux:    ./apply-text-regex-hotfix.sh
+2) Rode:
+   - Windows:  _APPLY-TEXT-REGEX-FLAG-HOTFIX-WINDOWS.bat
+   - macOS:    _APPLY-TEXT-REGEX-FLAG-HOTFIX-MAC.command
+   - Linux:    ./apply-text-regex-flag-hotfix.sh
