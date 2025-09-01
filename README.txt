@@ -1,14 +1,14 @@
-UI Search Hotfix — v2 (sem regex com aspas)
-Corrige o erro de parsing no PowerShell e injeta a barra de busca na home com verificações simples.
+App Files Hotfix (v1)
+Corrige erros de sintaxe/encoding em `src/app/layout.tsx` e `src/app/page.tsx`.
 
-O que muda nesta versão:
-- Evita regex com aspas/escapes: usa `.Contains(...)` e `IndexOf(...)`.
-- Não usa a variável reservada `$HOME` (usa `$homeFile`).
-- Insere `<HomeSearchBar />` antes do primeiro `<main>`; se não existir, após `return (`.
+O que este pacote faz:
+- Substitui `src/app/layout.tsx` por uma versão limpa (Next.js 14, com `metadata` e `RootLayout`).
+- Substitui `src/app/page.tsx` por uma home mínima e válida, com acentuação correta (UTF-8).
+- Faz backup dos arquivos antigos, commit + push e (se houver) dispara Deploy Hook do Vercel.
 
 Como usar:
-1) Descompacte na RAIZ do projeto.
+1) Coloque o ZIP na RAIZ do projeto (onde tem `.git`) e descompacte.
 2) Execute:
-   - Windows:  _APPLY-UI-SEARCH-HOTFIX2-WINDOWS.bat
-   - macOS:    _APPLY-UI-SEARCH-HOTFIX2-MAC.command
-   - Linux:    ./apply-ui-search-hotfix2.sh
+   - Windows:  _APPLY-FIX-APP-FILES-WINDOWS.bat
+   - macOS:    _APPLY-FIX-APP-FILES-MAC.command
+   - Linux:    ./apply-fix-app-files.sh
