@@ -31,24 +31,22 @@ export default function HomeFeed() {
     return () => { active = false }
   }, [])
 
-  if (loading) {
-    return <div className="text-center text-sm text-gray-500">Carregando feed…</div>
-  }
-
-  if (!items.length) {
-    return <div className="text-center text-sm text-gray-500">Sem posts por enquanto.</div>
-  }
+  if (loading) return <div className="text-center text-sm text-gray-500">Carregando feed…</div>
+  if (!items.length) return <div className="text-center text-sm text-gray-500">Sem posts por enquanto.</div>
 
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((it) => (
         <article key={it.id} className="border rounded-xl overflow-hidden bg-white dark:bg-neutral-800">
-          <a href={it.permalink || '#'} target="_blank" rel="noreferrer">
+          <a href={`/posts/${encodeURIComponent(it.id)}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={it.media_url} alt={it.caption || 'Post'} className="w-full h-56 object-cover" />
           </a>
           <div className="p-3">
-            <p className="text-sm text-gray-700 dark:text-gray-200 line-clamp-3">{it.caption}</p>
+            <a href={`/posts/${encodeURIComponent(it.id)}`} className="text-sm font-medium hover:underline">
+              Ver detalhes
+            </a>
+            <p className="mt-1 text-sm text-gray-700 dark:text-gray-200 line-clamp-3">{it.caption}</p>
             <div className="mt-2 text-xs text-gray-500">
               {it.timestamp ? new Date(it.timestamp).toLocaleDateString() : null}
             </div>
