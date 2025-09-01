@@ -1,16 +1,16 @@
-SEO-Pack Cleanup (v1)
-Resolve o erro do build por causa de pastas "backup-*" dentro do repositório.
+SEO-Pack Cleanup (v2)
+Corrige o build falhando por causa de arquivos dentro de `payload/`.
 
 O que este pacote faz (1‑clique):
-- Remove quaisquer pastas "backup-*" já criadas e versionadas.
-- Corrige (de novo, por garantia) imports em src/app/robots.ts e src/app/sitemap.ts para "@/lib/seo".
-- Atualiza .gitignore para ignorar "backup-*/" e ".backups/".
-- Atualiza tsconfig.json para excluir "**/backup-*/**" e ".backups/**".
-- Faz commit + push e opcionalmente aciona o Deploy Hook do Vercel.
+- Garante que `src/app/robots.ts` e `src/app/sitemap.ts` usem `@/lib/seo`.
+- Adiciona `payload/` no `.gitignore`.
+- Adiciona exclusões em `tsconfig.json`: `"payload/**"` (além de `**/backup-*/**` e `.backups/**`).
+- Remove `payload/` do repositório (git rm --cached) e também do disco.
+- Faz `commit + push` e (opcional) chama o Deploy Hook do Vercel.
 
 Como usar:
-1) Coloque o ZIP na raíz do projeto (onde tem .git) e descompacte.
+1) Coloque o ZIP na RAIZ do projeto (onde tem `.git`) e descompacte.
 2) Execute:
-   - Windows: _APPLY-CLEANUP-WINDOWS.bat
-   - macOS:   _APPLY-CLEANUP-MAC.command
-   - Linux:   ./apply-cleanup.sh
+   - Windows:  _APPLY-CLEANUP2-WINDOWS.bat
+   - macOS:    _APPLY-CLEANUP2-MAC.command
+   - Linux:    ./apply-cleanup2.sh
