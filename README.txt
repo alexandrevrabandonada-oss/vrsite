@@ -1,9 +1,16 @@
-Instagram Detail Robust Fetch (v2)
-Faz a página /instagram/[id] buscar o post de forma resiliente:
-1) Tenta **fetch('/api/ig?id=...')** relativo (recomendado pelo Next).
-2) Se falhar, resolve **origin** via headers e tenta **fetch('${origin}/api/ig?id=...')**.
-3) Se ainda falhar e **debug=1**, mostra status, corpo do erro e a lista de ids que a API enxerga.
+IG Unified Data Layer (v1)
+---------------------------------
+Objetivo: parar de chamar a própria API a partir do Server Component.
+Em vez disso, mover a lógica para `src/lib/ig-data.ts` e reutilizar tanto
+na rota `/api/ig` quanto na página `/instagram/[id]`.
+
+Conteúdo:
+- payload/src/lib/ig-data.ts
+- payload/src/app/api/ig/route.ts   (reimplementado para usar a lib)
+- payload/src/app/instagram/[id]/page.tsx  (usa a lib direta, com debug robusto)
+- aplicadores 1‑clique (Win/Mac/Linux)
 
 Como usar:
-1) Descompacte na RAIZ do repo.
-2) Rode o script do seu sistema para aplicar, commitar, pushar e (se houver Deploy Hook) redeploy.
+1) Descompacte o ZIP na **raiz do repo**.
+2) Rode um dos scripts de aplicação.
+3) Faça o deploy.
