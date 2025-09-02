@@ -1,15 +1,17 @@
-Hotfix: Ajusta imports de '@/src/*' para '@/*'
-Motivo: seu tsconfig já usa baseUrl/path '@/*' apontando para 'src', então '@/src/...' quebra em build.
+Next Diagnostics Kit (v1)
+-------------------------
+Cria duas páginas de diagnóstico (SSR) que usam a *mesma* camada de dados do Instagram:
 
-O script corrige:
-- src/app/api/ig/route.ts  ('@/src/lib/ig-data' -> '@/lib/ig-data')
-- src/app/instagram/[id]/page.tsx  ('@/src/lib/ig-data' -> '@/lib/ig-data')
-- src/lib/ig-data.ts  ('@/src/data/ig-seed.json' -> '@/data/ig-seed.json')
+1) /diag/ids
+   - Lista todos os IDs que a app enxerga via `listIgItems()`
 
-Como usar:
-1) Descompacte na raiz do repositório.
-2) Rode um dos aplicadores:
-   - Windows:  _APPLY-FIX-IMPORTS-WINDOWS.bat
-   - macOS:    _APPLY-FIX-IMPORTS-MAC.command
-   - Linux:    ./apply-fix-imports.sh
-Os scripts fazem backup, commit, push e (se existir) chamam o Deploy Hook no Vercel.
+2) /diag/item/[id]
+   - Mostra o JSON retornado por `getIgItemById(id)` (sem passar pela /api)
+
+Instalação:
+1) Descompacte este ZIP na **raiz** do repo.
+2) Execute:
+   - Windows:  _APPLY-NEXT-DIAG-WINDOWS.bat
+   - macOS:    _APPLY-NEXT-DIAG-MAC.command
+   - Linux:    ./apply-next-diag.sh
+3) Faça o deploy (os scripts já committam/pusham e disparam Deploy Hook se existir).
