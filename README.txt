@@ -1,10 +1,16 @@
-Diagnostics Pack v1
-Adiciona endpoints e página de diagnóstico para entender o erro do detalhe do post.
+Instagram Post SSR Patch (v1)
+Troca a página de detalhe para **Server Component** com origem segura via headers, usando:
+- `x-forwarded-proto` + `x-forwarded-host` (Vercel) para montar a URL absoluta
+- `dynamic = 'force-dynamic'` para evitar cache
+- Tratamento de erros claro
 
-Adições:
-- `src/app/api/diag/route.ts` -> ecoa headers/proto/host/vercel_url.
-- `src/app/api/ig/route.ts` -> mantém a versão robusta e acrescenta `&_dump=1` para ver itens crus.
-- `src/app/diag/page.tsx` -> painel que testa /api/ig, /api/ig?id=seed-1, /api/ig?id=seed-1&debug=1, /api/diag.
-- `src/app/instagram/[id]/page.tsx` (client) -> modo debug quando `?debug=1`.
+Arquivos:
+- payload/src/app/instagram/[id]/page.tsx  (novo)
+- apply scripts (Win/Mac/Linux) que fazem backup, commit + push e chamam Deploy Hook se existir em `.env.vercel`
 
-Scripts 1‑clique (Windows/Mac/Linux) com backup + commit + push; dispara deploy hook se presente.
+Como usar:
+1) Descompacte este ZIP na **raiz** do repositório (onde fica a pasta `.git`).
+2) Execute um dos scripts:
+   - Windows:  _APPLY-INSTAGRAM-POST-SSR-PATCH-WINDOWS.bat
+   - macOS:    _APPLY-INSTAGRAM-POST-SSR-PATCH-MAC.command
+   - Linux:    ./apply-instagram-post-ssr-patch.sh
