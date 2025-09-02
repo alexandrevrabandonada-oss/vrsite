@@ -1,18 +1,14 @@
-Bracket Paths Fixer (v1)
-------------------------
-Em Windows/PowerShell, colchetes `[` `]` são curingas, e copiar arquivos para pastas como `[id]` falha silenciosamente.
-Este patch:
-1) Regrava — com APIs .NET (LiteralPath) — os arquivos de rotas dinâmicas:
-   - src/app/instagram/[id]/page.tsx
-   - src/app/diag/item/[id]/page.tsx
-2) Também cria um alias redundante sem colchetes:
-   - src/app/diag/itemid/[id]/page.tsx  (e links em /diag/ids apontam para este alias)
-Assim você consegue testar mesmo que um dos caminhos esteja com problema.
+Instagram Detail Debug View (v3)
+--------------------------------
+Melhora a página /instagram/[id] com:
+- Painel de debug quando `?debug=1` mostrando o JSON completo do item.
+- Fallback de imagem (se media_url quebrar).
+- Mensagem clara quando `item` vier null.
+- Garante que og-default.png exista em /public.
 
-Como usar:
-1) Descompacte na **raiz do repo**.
-2) Rode:
-   - Windows:  _APPLY-BRACKETS-FIX-WINDOWS.bat
-   - macOS:    _APPLY-BRACKETS-FIX-MAC.command
-   - Linux:    ./apply-brackets-fix.sh
-Os scripts fazem backup, escrevem os arquivos via *System.IO* (Windows) e fazem commit/push + opcional Deploy Hook.
+Instalação:
+1) Descompacte o ZIP na **raiz** do repo.
+2) Execute:
+   - Windows:  _APPLY-INSTAGRAM-DEBUG-WINDOWS.bat
+   - macOS:    _APPLY-INSTAGRAM-DEBUG-MAC.command
+   - Linux:    ./apply-instagram-debug.sh
