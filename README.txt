@@ -1,16 +1,15 @@
-IG Unified Data Layer (v1)
----------------------------------
-Objetivo: parar de chamar a própria API a partir do Server Component.
-Em vez disso, mover a lógica para `src/lib/ig-data.ts` e reutilizar tanto
-na rota `/api/ig` quanto na página `/instagram/[id]`.
+Hotfix: Ajusta imports de '@/src/*' para '@/*'
+Motivo: seu tsconfig já usa baseUrl/path '@/*' apontando para 'src', então '@/src/...' quebra em build.
 
-Conteúdo:
-- payload/src/lib/ig-data.ts
-- payload/src/app/api/ig/route.ts   (reimplementado para usar a lib)
-- payload/src/app/instagram/[id]/page.tsx  (usa a lib direta, com debug robusto)
-- aplicadores 1‑clique (Win/Mac/Linux)
+O script corrige:
+- src/app/api/ig/route.ts  ('@/src/lib/ig-data' -> '@/lib/ig-data')
+- src/app/instagram/[id]/page.tsx  ('@/src/lib/ig-data' -> '@/lib/ig-data')
+- src/lib/ig-data.ts  ('@/src/data/ig-seed.json' -> '@/data/ig-seed.json')
 
 Como usar:
-1) Descompacte o ZIP na **raiz do repo**.
-2) Rode um dos scripts de aplicação.
-3) Faça o deploy.
+1) Descompacte na raiz do repositório.
+2) Rode um dos aplicadores:
+   - Windows:  _APPLY-FIX-IMPORTS-WINDOWS.bat
+   - macOS:    _APPLY-FIX-IMPORTS-MAC.command
+   - Linux:    ./apply-fix-imports.sh
+Os scripts fazem backup, commit, push e (se existir) chamam o Deploy Hook no Vercel.

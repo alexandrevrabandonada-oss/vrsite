@@ -1,4 +1,4 @@
-export type IgItem = {
+﻿export type IgItem = {
   id: string
   media_url: string
   permalink?: string
@@ -8,9 +8,9 @@ export type IgItem = {
 
 // Carrega seed local em runtime (Node)
 async function loadSeed(): Promise<IgItem[]> {
-  // Import dinâmico para não entrar no bundle do client
+  // Import dinÃ¢mico para nÃ£o entrar no bundle do client
   try {
-    const mod = await import('@/src/data/ig-seed.json')
+    const mod = await import('@/data/ig-seed.json')
     const arr = (mod?.default ?? []) as any[]
     return Array.isArray(arr) ? arr as IgItem[] : []
   } catch {
@@ -29,3 +29,4 @@ export async function getIgItemById(id: string): Promise<IgItem | null> {
   const found = items.find(x => String(x.id) === String(id))
   return found ?? null
 }
+

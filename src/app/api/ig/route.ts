@@ -1,5 +1,5 @@
-import { NextRequest } from 'next/server'
-import { listIgItems, getIgItemById } from '@/src/lib/ig-data'
+﻿import { NextRequest } from 'next/server'
+import { listIgItems, getIgItemById } from '@/lib/ig-data'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,3 +23,4 @@ export async function GET(req: NextRequest) {
   const payload = dump ? { items, _diagnostic: { count: items.length, ids: items.map(x => x.id) } } : { items }
   return new Response(JSON.stringify(payload), { status: 200, headers: { 'content-type': 'application/json' } })
 }
+
