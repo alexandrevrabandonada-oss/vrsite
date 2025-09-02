@@ -1,41 +1,79 @@
-import { getIgItemById } from '@/lib/ig-data'
-export const dynamic = 'force-dynamic'
+﻿'use client'
+import * as React from 'react'
 
-function toBool(v:any){ return v===true || v==='1' || (Array.isArray(v) && v[0]==='1') }
+function useQueryParam(name: string) {
+  if (typeof window === 'undefined') return null
+  const url = new URL(window.location.href)
+  return url.searchParams.get(name)
+}
 
-export default async function InstagramDetailSafe({ params, searchParams }: any) {
+type IgItem = {
+  id: string
+  media_url?: string
+  permalink?: string
+  caption?: string
+  timestamp?: string
+}
+
+export default function InstagramClientDetail({ params }: any) {
   const id = String(params?.id || '')
-  const debug = toBool(searchParams?.debug)
-  let item:any = null
-  let caught:any = null
+  const debug = typeof window !== 'undefined' ? (new URL(window.location.href).searchParams.get('debug') === '1') : false
+  const [state, setState] = React.useState<{loading:boolean, error:string|null, item:IgItem|null}>({
+    loading: true, error: null, item: null
+  })
 
-  try {
-    item = await getIgItemById(id)
-  } catch (e:any) {
-    caught = { message: String(e?.message || e), stack: String(e?.stack || '') }
-  }
-
-  if (!item && !debug) {
-    // em modo "não debug", apenas um texto simples para não quebrar
-    return <main style={{padding:'24px'}}><a href="/" style={{opacity:.7}}>&larr; Voltar</a><h1>Post não encontrado</h1><p>ID: <code>{id}</code></p></main>
-  }
+  React.useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      try {
+        const res = await fetch(`/api/ig?id=${encodeURIComponent(id)}${debug ? '&debug=1&_dump=1' : ''}`, { cache: 'no-store' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        const item: IgItem = data?.item || null
+        if (!cancelled) setState({ loading: false, error: null, item })
+      } catch (e:any) {
+        if (!cancelled) setState({ loading: false, error: e?.message || String(e), item: null })
+      }
+    }
+    run()
+    return () => { cancelled = true }
+  }, [id, debug])
 
   return (
     <main style={{padding:'24px'}}>
       <a href="/" style={{opacity:.7}}>&larr; Voltar</a>
-      <h1 style={{margin:'12px 0'}}>Instagram Detail (safe)</h1>
-      {debug ? (
+      <h1 style={{margin:'12px 0'}}>Post do Instagram</h1>
+
+      {state.loading && <p>Carregandoâ€¦</p>}
+      {state.error && (
         <pre style={{background:'#111',color:'#fff',padding:'12px',borderRadius:'8px',overflow:'auto'}}>
-{JSON.stringify({ id, item, error: caught }, null, 2)}
+{`Erro: ${state.error}\nID: ${id}`}
         </pre>
-      ) : null}
-      {item ? (
+      )}
+
+      {debug && !state.loading && (
+        <details open style={{margin:'12px 0'}}>
+          <summary>Debug</summary>
+          <pre style={{background:'#111',color:'#fff',padding:'12px',borderRadius:'8px',overflow:'auto'}}>
+{JSON.stringify({ id, item: state.item }, null, 2)}
+          </pre>
+        </details>
+      )}
+
+      {state.item && (
         <section style={{marginTop:'12px'}}>
-          <img src={item.media_url || '/og-default.png'} alt="post" style={{maxWidth:'100%',border:'1px solid #ddd',borderRadius:'8px'}} onError={(e:any)=>{ e.currentTarget.src='/og-default.png' }}/>
-          <p style={{marginTop:'8px',whiteSpace:'pre-wrap'}}>{item.caption || ''}</p>
-          {item.permalink ? <p style={{marginTop:'8px'}}><a href={item.permalink} target="_blank" rel="noreferrer">Ver no Instagram</a></p> : null}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={state.item.media_url || '/og-default.png'}
+            alt="post"
+            onError={(e:any)=>{ e.currentTarget.src='/og-default.png' }}
+            style={{maxWidth:'100%',border:'1px solid #ddd',borderRadius:'8px'}}
+          />
+          <p style={{marginTop:'8px',whiteSpace:'pre-wrap'}}>{state.item.caption || ''}</p>
+          {state.item.permalink ? <p style={{marginTop:'8px'}}><a href={state.item.permalink} target="_blank" rel="noreferrer">Ver no Instagram</a></p> : null}
         </section>
-      ) : null}
+      )}
     </main>
   )
 }
+

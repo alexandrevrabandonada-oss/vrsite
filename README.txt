@@ -1,9 +1,13 @@
-Diag SS Fix Import (v3)
------------------------
-Corrige o erro de import e evita o problema "Copy-Item ... por ele mesmo" escrevendo o arquivo via here-string.
+Instagram Client Detail (v1)
+----------------------------
+Substitui a página /instagram/[id] por uma versão **Client Component**.
+Ela busca o item via `/api/ig?id=...` no navegador (fetch) e renderiza sem risco de crash de Server Component.
+Inclui modo debug (?debug=1).
 
-Instruções:
-1) Extraia na **raiz do repositório**.
-2) Windows: execute `_APPLY-DIAG-FIX.bat`
-   macOS/Linux: `bash apply-diag-fix.sh`
-3) Aguarde o deploy. Teste: /api/diag/ss?id=seed-1
+Como aplicar:
+1) Extraia este ZIP na **raiz do repositório**.
+2) Windows: rode `_APPLY-INSTAGRAM-CLIENT-WINDOWS.bat`
+   macOS/Linux: `bash apply-instagram-client.sh`
+3) Após o deploy, teste:
+   - /instagram/seed-1?debug=1
+   - /instagram/seed-2?debug=1
