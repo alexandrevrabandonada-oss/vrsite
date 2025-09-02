@@ -1,16 +1,11 @@
-Instagram Post SSR Patch (v1)
-Troca a página de detalhe para **Server Component** com origem segura via headers, usando:
-- `x-forwarded-proto` + `x-forwarded-host` (Vercel) para montar a URL absoluta
-- `dynamic = 'force-dynamic'` para evitar cache
-- Tratamento de erros claro
+Safe Links & Redirects (v1)
+Objetivo: acabar com "Página não encontrada" ao clicar no card.
+Ações:
+1) Torna o HomeFeed mais explícito: mostra o ID e garante link robusto para /instagram/{id}?debug=1.
+2) Cria /instagram (index) SSR listando itens vindos de /api/ig, com links corretos.
+3) Adiciona rewrites via middleware.ts para rotas antigas:
+   - /post/{id}     -> /instagram/{id}
+   - /posts/{id}    -> /instagram/{id}
+   - /materias/{id} -> /instagram/{id}
 
-Arquivos:
-- payload/src/app/instagram/[id]/page.tsx  (novo)
-- apply scripts (Win/Mac/Linux) que fazem backup, commit + push e chamam Deploy Hook se existir em `.env.vercel`
-
-Como usar:
-1) Descompacte este ZIP na **raiz** do repositório (onde fica a pasta `.git`).
-2) Execute um dos scripts:
-   - Windows:  _APPLY-INSTAGRAM-POST-SSR-PATCH-WINDOWS.bat
-   - macOS:    _APPLY-INSTAGRAM-POST-SSR-PATCH-MAC.command
-   - Linux:    ./apply-instagram-post-ssr-patch.sh
+Scripts 1‑clique (Win/Mac/Linux) fazem backup, commit + push e chamam Deploy Hook se existir.
